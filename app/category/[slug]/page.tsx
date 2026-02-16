@@ -1,8 +1,12 @@
+"use client"
+
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { getAllProducts, categories } from "@/lib/data"
+import { categories } from "@/lib/data"
 import { notFound } from "next/navigation"
+import { useProducts } from "@/components/providers/product-provider"
+import { use } from "react"
 
 interface CategoryPageProps {
     params: Promise<{
@@ -10,15 +14,16 @@ interface CategoryPageProps {
     }>
 }
 
-export default async function CategoryPage({ params }: CategoryPageProps) {
-    const { slug } = await params
+export default function CategoryPage({ params }: CategoryPageProps) {
+    const { slug } = use(params)
+    const { products: allProducts } = useProducts()
     const category = categories.find((c) => c.slug === slug)
 
     if (!category) {
         notFound()
     }
 
-    const products = getAllProducts().filter(
+    const filteredProducts = allProducts.filter(
         (p) => p.category.toLowerCase() === category.name.toLowerCase()
     )
 
@@ -30,18 +35,22 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                {products.length > 0 ? (
-                    products.map((product) => (
+                {filteredProducts.length > 0 ? (
+                    filteredProducts.map((product) => (
                         <Link key={product.id} href={`/products/${product.id}`}>
                             <Card className="overflow-hidden hover:shadow-lg transition-shadow h-full">
-                                <div className="aspect-square bg-muted flex items-center justify-center">
-                                    <div className="text-muted-foreground">Product Image</div>
+                                <div className="aspect-square bg-muted flex items-center justify-center relative">
+                                    {product.image && product.image !== "/images/placeholder.jpg" ? (
+                                        <img src={product.image} alt={product.name} className="object-cover w-full h-full" />
+                                    ) : (
+                                        <div className="text-muted-foreground text-xs">No Image</div>
+                                    )}
                                 </div>
                                 <CardContent className="p-4">
                                     <div className="text-sm text-muted-foreground mb-1">{product.category}</div>
                                     <h3 className="font-semibold text-lg mb-2">{product.name}</h3>
                                     <div className="flex items-center justify-between mt-auto">
-                                        <span className="font-bold text-primary">${product.price.toFixed(2)}</span>
+                                        <span className="font-bold text-primary">₹{product.price.toFixed(2)}</span>
                                         <Button size="sm" variant="secondary">
                                             View
                                         </Button>
@@ -62,3 +71,4 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         </div>
     )
 }
+

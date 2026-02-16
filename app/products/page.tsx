@@ -1,10 +1,12 @@
+"use client"
+
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { getAllProducts } from "@/lib/data"
+import { useProducts } from "@/components/providers/product-provider"
 
 export default function ProductsPage() {
-    const products = getAllProducts()
+    const { products } = useProducts()
 
     return (
         <div className="container px-4 md:px-6 py-8">
@@ -22,15 +24,6 @@ export default function ProductsPage() {
                             ))}
                         </div>
                     </div>
-                    <div>
-                        <h3 className="font-semibold mb-4">Price Range</h3>
-                        {/* Slider placeholder */}
-                        <div className="h-2 bg-secondary rounded w-full"></div>
-                        <div className="flex justify-between text-sm mt-2">
-                            <span>$0</span>
-                            <span>$100</span>
-                        </div>
-                    </div>
                 </aside>
 
                 {/* Product Grid */}
@@ -45,14 +38,17 @@ export default function ProductsPage() {
                             <Link key={product.id} href={`/products/${product.id}`}>
                                 <Card className="overflow-hidden hover:shadow-lg transition-shadow">
                                     <div className="aspect-square bg-muted flex items-center justify-center p-4">
-                                        {/* Placeholder */}
-                                        <span className="text-muted-foreground">Image</span>
+                                        {product.image && product.image !== "/images/placeholder.jpg" ? (
+                                            <img src={product.image} alt={product.name} className="object-cover w-full h-full" />
+                                        ) : (
+                                            <span className="text-muted-foreground text-xs text-center">No Image<br />Available</span>
+                                        )}
                                     </div>
                                     <CardContent className="p-4">
                                         <div className="text-sm text-muted-foreground mb-1">{product.category}</div>
                                         <h3 className="font-semibold text-lg mb-2">{product.name}</h3>
                                         <div className="flex items-center justify-between mt-4">
-                                            <span className="font-bold text-primary text-xl">${product.price.toFixed(2)}</span>
+                                            <span className="font-bold text-primary text-xl">₹{product.price.toFixed(2)}</span>
                                             <Button size="sm">Add to Cart</Button>
                                         </div>
                                     </CardContent>
@@ -65,3 +61,4 @@ export default function ProductsPage() {
         </div>
     )
 }
+

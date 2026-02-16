@@ -45,7 +45,7 @@ export default function ContactPage() {
                                 <Mail className="h-6 w-6 text-primary" />
                                 <div>
                                     <h3 className="font-semibold">Email</h3>
-                                    <p className="text-muted-foreground text-sm">support@pharmacare.com</p>
+                                    <p className="text-muted-foreground text-sm">support@vrindacare.com</p>
                                 </div>
                             </div>
                         </CardContent>

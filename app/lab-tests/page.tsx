@@ -1,7 +1,10 @@
+"use client"
+
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Beaker, Activity, Heart, FileText } from "lucide-react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 
 const labTests = [
     {
@@ -35,6 +38,13 @@ const labTests = [
 ]
 
 export default function LabTestsPage() {
+    const router = useRouter()
+
+    const handleBookTest = (test: typeof labTests[0]) => {
+        // You can redirect to a booking page or show a modal
+        // For now, we'll redirect to contact page with test info
+        router.push(`/contact?test=${encodeURIComponent(test.title)}&price=${test.price}`)
+    }
     return (
         <div className="container px-4 md:px-6 py-8">
             <div className="flex flex-col items-center text-center space-y-4 mb-10">
@@ -58,7 +68,7 @@ export default function LabTestsPage() {
                             <div className="text-2xl font-bold text-primary">${test.price.toFixed(2)}</div>
                         </CardContent>
                         <CardFooter>
-                            <Button className="w-full">Book Now</Button>
+                            <Button className="w-full" onClick={() => handleBookTest(test)}>Book Now</Button>
                         </CardFooter>
                     </Card>
                 ))}

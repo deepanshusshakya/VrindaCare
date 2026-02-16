@@ -6,18 +6,20 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useCart } from "@/components/providers/cart-provider"
 import { useState, useEffect, useRef } from "react"
-import { getAllProducts, type Product } from "@/lib/data"
-import { useRouter } from "next/navigation"
+import { useProducts } from "@/components/providers/product-provider"
+import { type Product } from "@/lib/data"
+import { useRouter, usePathname } from "next/navigation"
 
 export function SiteHeader() {
     const { items } = useCart()
+    const { products: allProducts } = useProducts()
     const [searchQuery, setSearchQuery] = useState("")
     const [searchResults, setSearchResults] = useState<Product[]>([])
     const [showResults, setShowResults] = useState(false)
     const searchRef = useRef<HTMLDivElement>(null)
     const router = useRouter()
+    const pathname = usePathname()
 
-    const allProducts = getAllProducts()
     const cartCount = items.reduce((sum, item) => sum + item.quantity, 0)
 
     useEffect(() => {
@@ -51,6 +53,20 @@ export function SiteHeader() {
         setSearchQuery("")
     }
 
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === "Enter") {
+            e.preventDefault()
+            if (searchResults.length > 0) {
+                // Navigate to first result
+                handleProductClick(searchResults[0].id)
+            } else if (searchQuery.trim()) {
+                // Navigate to products page with search query
+                router.push(`/products?search=${encodeURIComponent(searchQuery)}`)
+                setShowResults(false)
+            }
+        }
+    }
+
     return (
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="container mx-auto px-4 md:px-6">
@@ -58,21 +74,37 @@ export function SiteHeader() {
                     {/* Logo */}
                     <Link href="/" className="flex items-center gap-2 font-bold text-primary text-xl">
                         <Pill className="h-6 w-6" />
-                        <span>PharmaCare</span>
+                        <span>VrindaCare</span>
                     </Link>
 
                     {/* Desktop Navigation */}
                     <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-muted-foreground">
-                        <Link href="/" className="hover:text-primary transition-colors">
+                        <Link
+                            href="/"
+                            className={`hover:text-primary transition-colors ${pathname === "/" ? "text-primary font-semibold" : ""
+                                }`}
+                        >
                             Home
                         </Link>
-                        <Link href="/products" className="hover:text-primary transition-colors">
+                        <Link
+                            href="/products"
+                            className={`hover:text-primary transition-colors ${pathname === "/products" ? "text-primary font-semibold" : ""
+                                }`}
+                        >
                             Medicines
                         </Link>
-                        <Link href="/wellness" className="hover:text-primary transition-colors">
+                        <Link
+                            href="/wellness"
+                            className={`hover:text-primary transition-colors ${pathname === "/wellness" ? "text-primary font-semibold" : ""
+                                }`}
+                        >
                             Wellness
                         </Link>
-                        <Link href="/lab-tests" className="hover:text-primary transition-colors">
+                        <Link
+                            href="/lab-tests"
+                            className={`hover:text-primary transition-colors ${pathname === "/lab-tests" ? "text-primary font-semibold" : ""
+                                }`}
+                        >
                             Lab Tests
                         </Link>
                     </nav>
@@ -88,6 +120,7 @@ export function SiteHeader() {
                                 value={searchQuery}
                                 onChange={handleSearch}
                                 onFocus={() => searchQuery.length > 0 && setShowResults(true)}
+                                onKeyDown={handleKeyDown}
                             />
                         </div>
                         {showResults && (

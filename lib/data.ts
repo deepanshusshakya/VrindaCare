@@ -16,6 +16,8 @@ export const categories = [
     { id: "4", name: "Personal Care", slug: "personal-care", image: "/images/personal.jpg", color: "bg-purple-100" },
     { id: "5", name: "Ayurveda", slug: "ayurveda", image: "/images/ayurveda.jpg", color: "bg-orange-100" },
     { id: "6", name: "Homeopathy", slug: "homeopathy", image: "/images/homeopathy.jpg", color: "bg-yellow-100" },
+    { id: "7", name: "Nutrition", slug: "nutrition", image: "/images/nutrition.jpg", color: "bg-teal-100" },
+    { id: "8", name: "Devices", slug: "devices", image: "/images/devices.jpg", color: "bg-indigo-100" },
 ]
 
 export const featuredProducts = [

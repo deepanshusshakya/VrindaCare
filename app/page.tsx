@@ -1,11 +1,17 @@
+"use client"
+
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
-import { Search, ShieldCheck, Truck, Users } from "lucide-react"
-import { categories, featuredProducts } from "@/lib/data"
+import { Search as SearchIcon, ShieldCheck as ShieldIcon, Truck as TruckIcon, Users as UsersIcon } from "lucide-react"
+import { categories } from "@/lib/data"
+import { useProducts } from "@/components/providers/product-provider"
 
 export default function Home() {
+  const { products } = useProducts()
+  const featuredDisplayProducts = products.slice(0, 4)
+
   return (
     <main className="flex-1">
       {/* Hero Section */}
@@ -23,7 +29,7 @@ export default function Home() {
             <div className="w-full max-w-sm space-y-2">
               <form className="flex space-x-2">
                 <div className="relative flex-1">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
                     className="pl-9 bg-background"
                     placeholder="Search medicines, health products..."
@@ -60,7 +66,6 @@ export default function Home() {
                 <Card className="h-full hover:shadow-lg transition-shadow border-none bg-muted/30 hover:bg-muted/50">
                   <CardContent className="flex flex-col items-center justify-center p-6 text-center space-y-4">
                     <div className={`w-16 h-16 rounded-full ${category.color} flex items-center justify-center`}>
-                      {/* Placeholder for category icon/image */}
                       <span className="text-2xl font-bold text-foreground/50">{category.name[0]}</span>
                     </div>
                     <span className="font-medium text-foreground">{category.name}</span>
@@ -82,17 +87,20 @@ export default function Home() {
             </Link>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-            {featuredProducts.map((product) => (
+            {featuredDisplayProducts.map((product) => (
               <Card key={product.id} className="overflow-hidden">
-                <div className="aspect-square bg-muted flex items-center justify-center">
-                  {/* Placeholder image */}
-                  <span className="text-muted-foreground">Product Image</span>
+                <div className="aspect-square bg-muted flex items-center justify-center relative">
+                  {product.image && product.image !== "/images/placeholder.jpg" ? (
+                    <img src={product.image} alt={product.name} className="object-cover w-full h-full" />
+                  ) : (
+                    <span className="text-muted-foreground">Product Image</span>
+                  )}
                 </div>
                 <CardContent className="p-4">
                   <div className="text-sm text-muted-foreground mb-1">{product.category}</div>
                   <h3 className="font-semibold text-lg mb-2">{product.name}</h3>
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-primary">${product.price.toFixed(2)}</span>
+                    <span className="font-bold text-primary">₹{product.price.toFixed(2)}</span>
                     <Button size="sm" variant="secondary">Add</Button>
                   </div>
                 </CardContent>
@@ -108,21 +116,21 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
             <div className="flex flex-col items-center space-y-2">
               <div className="p-4 bg-blue-50 rounded-full text-blue-600">
-                <ShieldCheck className="h-8 w-8" />
+                <ShieldIcon className="h-8 w-8" />
               </div>
               <h3 className="font-bold">100% Genuine Medicines</h3>
               <p className="text-muted-foreground text-sm">Sourced directly from manufacturers.</p>
             </div>
             <div className="flex flex-col items-center space-y-2">
               <div className="p-4 bg-green-50 rounded-full text-green-600">
-                <Users className="h-8 w-8" />
+                <UsersIcon className="h-8 w-8" />
               </div>
               <h3 className="font-bold">Trusted by Millions</h3>
               <p className="text-muted-foreground text-sm">Over 10 million happy customers.</p>
             </div>
             <div className="flex flex-col items-center space-y-2">
               <div className="p-4 bg-orange-50 rounded-full text-orange-600">
-                <Truck className="h-8 w-8" />
+                <TruckIcon className="h-8 w-8" />
               </div>
               <h3 className="font-bold">Fast Delivery</h3>
               <p className="text-muted-foreground text-sm">Delivery within 24-48 hours.</p>
@@ -133,3 +141,4 @@ export default function Home() {
     </main>
   )
 }
+

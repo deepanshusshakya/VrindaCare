@@ -1,10 +1,13 @@
+"use client"
+
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { getAllProducts } from "@/lib/data"
+import { useProducts } from "@/components/providers/product-provider"
 
 export default function WellnessPage() {
-    const products = getAllProducts().filter(p => p.category === "Wellness" || p.category === "Personal Care")
+    const { products: allProducts } = useProducts()
+    const products = allProducts.filter(p => p.category === "Wellness" || p.category === "Personal Care")
 
     return (
         <div className="container px-4 md:px-6 py-8">
@@ -19,15 +22,18 @@ export default function WellnessPage() {
                 {products.length > 0 ? (
                     products.map((product) => (
                         <Card key={product.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                            <div className="aspect-square bg-muted flex items-center justify-center">
-                                {/* Placeholder image */}
-                                <div className="text-muted-foreground">Product Image</div>
+                            <div className="aspect-square bg-muted flex items-center justify-center relative">
+                                {product.image && product.image !== "/images/placeholder.jpg" ? (
+                                    <img src={product.image} alt={product.name} className="object-cover w-full h-full" />
+                                ) : (
+                                    <div className="text-muted-foreground text-xs">Product Image</div>
+                                )}
                             </div>
                             <CardContent className="p-4">
                                 <div className="text-sm text-muted-foreground mb-1">{product.category}</div>
                                 <h3 className="font-semibold text-lg mb-2">{product.name}</h3>
                                 <div className="flex items-center justify-between mt-4">
-                                    <span className="font-bold text-primary">${product.price.toFixed(2)}</span>
+                                    <span className="font-bold text-primary">₹{product.price.toFixed(2)}</span>
                                     <Button size="sm" variant="secondary" asChild>
                                         <Link href={`/products/${product.id}`}>View Details</Link>
                                     </Button>
@@ -61,3 +67,4 @@ export default function WellnessPage() {
         </div>
     )
 }
+

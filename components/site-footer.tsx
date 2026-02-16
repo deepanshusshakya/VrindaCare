@@ -9,7 +9,7 @@ export function SiteFooter() {
                     <div className="space-y-4">
                         <Link href="/" className="flex items-center gap-2 font-bold text-primary text-xl">
                             <Pill className="h-6 w-6" />
-                            <span>PharmaCare</span>
+                            <span>VrindaCare</span>
                         </Link>
                         <p className="text-sm text-muted-foreground">
                             Your trusted partner for health and wellness. High-quality medicines delivered to your doorstep.
@@ -45,7 +45,7 @@ export function SiteFooter() {
                             </li>
                             <li className="flex items-center gap-2">
                                 <Mail className="h-4 w-4" />
-                                <span>support@pharmacare.com</span>
+                                <span>support@vrindacare.com</span>
                             </li>
                             <li className="flex items-center gap-2">
                                 <MapPin className="h-4 w-4" />
@@ -55,7 +55,7 @@ export function SiteFooter() {
                     </div>
                 </div>
                 <div className="mt-10 border-t pt-6 text-center text-sm text-muted-foreground">
-                    <p>&copy; {new Date().getFullYear()} PharmaCare. All rights reserved.</p>
+                    <p>&copy; {new Date().getFullYear()} VrindaCare. All rights reserved.</p>
                 </div>
             </div>
         </footer>

@@ -7,7 +7,7 @@ export default function AboutPage() {
         <div className="container px-4 md:px-6 py-12">
             <div className="max-w-3xl mx-auto space-y-8">
                 <div className="text-center space-y-4">
-                    <h1 className="text-4xl font-bold tracking-tight">About PharmaCare</h1>
+                    <h1 className="text-4xl font-bold tracking-tight">About VrindaCare</h1>
                     <p className="text-xl text-muted-foreground">
                         Your trusted partner in health and wellness, delivering genuine medicines since 2024.
                     </p>
@@ -15,7 +15,7 @@ export default function AboutPage() {
 
                 <div className="prose prose-lg dark:prose-invert mx-auto">
                     <p>
-                        At PharmaCare, we believe that access to healthcare should be simple, affordable, and transparent.
+                        At VrindaCare, we believe that access to healthcare should be simple, affordable, and transparent.
                         We started with a mission to make essential medicines accessible to everyone, regardless of their location.
                     </p>
                 </div>
