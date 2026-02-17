@@ -30,6 +30,20 @@ export function ProductProvider({ children }: { children: React.ReactNode }) {
             setProducts(featuredProducts)
         }
         setIsInitialized(true)
+
+        // Sync products across tabs
+        const handleStorageChange = (e: StorageEvent) => {
+            if (e.key === "vrindacare_products" && e.newValue) {
+                try {
+                    setProducts(JSON.parse(e.newValue))
+                } catch (error) {
+                    console.error("Failed to parse products from storage event:", error)
+                }
+            }
+        }
+
+        window.addEventListener("storage", handleStorageChange)
+        return () => window.removeEventListener("storage", handleStorageChange)
     }, [])
 
     // Save to localStorage whenever products change
