@@ -34,7 +34,7 @@ import {
 } from "lucide-react"
 import { getAllProducts, categories } from "@/lib/data"
 import { useProducts } from "@/components/providers/product-provider"
-import { store, type Order, type Prescription, type Inquiry } from "@/lib/store"
+import { store, type Order, type Prescription, type Inquiry, type User } from "@/lib/store"
 
 export default function AdminDashboard() {
     const [activeTab, setActiveTab] = useState("dashboard")
@@ -45,6 +45,7 @@ export default function AdminDashboard() {
     const [orders, setOrders] = useState<Order[]>([])
     const [prescriptions, setPrescriptions] = useState<Prescription[]>([])
     const [inquiries, setInquiries] = useState<Inquiry[]>([])
+    const [users, setUsers] = useState<User[]>([])
 
     // UI States
     const [toast, setToast] = useState<{ message: string, type: "success" | "error" | "info" } | null>(null)
@@ -63,9 +64,7 @@ export default function AdminDashboard() {
     })
 
     useEffect(() => {
-        setOrders(store.getOrders())
-        setPrescriptions(store.getPrescriptions())
-        setInquiries(store.getInquiries())
+        refreshData()
     }, [])
 
     const showToast = (message: string, type: "success" | "error" | "info" = "success") => {
@@ -77,6 +76,7 @@ export default function AdminDashboard() {
         setOrders(store.getOrders())
         setPrescriptions(store.getPrescriptions())
         setInquiries(store.getInquiries())
+        setUsers(store.getUsers())
     }
 
     // Dashboard stats
@@ -92,14 +92,49 @@ export default function AdminDashboard() {
         prescriptionsTrend: 5.1
     }
 
+    // Derived Filtered Data
+    const filteredProducts = products.filter(p =>
+        !searchQuery || p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.category.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+
+    const filteredOrders = orders.filter(o =>
+        !searchQuery || o.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        o.id.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+
+    const filteredPrescriptions = prescriptions.filter(p =>
+        !searchQuery || p.patient.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.id.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+
+    const filteredInquiries = inquiries.filter(i =>
+        !searchQuery || i.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        i.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        i.email.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+
+    const filteredUsers = users.filter(u =>
+        !searchQuery || u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        u.email.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+
     const recentOrders = orders.slice(0, 5)
 
-    const users = [
-        { id: 1, name: "Rahul Verma", email: "rahul@example.com", orders: 12, joined: "Jan 2024" },
-        { id: 2, name: "Anita Desai", email: "anita@example.com", orders: 8, joined: "Feb 2024" },
-        { id: 3, name: "Karan Mehta", email: "karan@example.com", orders: 15, joined: "Dec 2023" },
-        { id: 4, name: "Pooja Iyer", email: "pooja@example.com", orders: 5, joined: "Mar 2024" },
-    ]
+    const handleAddNew = () => {
+        if (activeTab === "inventory") {
+            setProductForm({ id: "", name: "", category: "Wellness", price: "", image: "" })
+            setModal({ type: "form", data: {} })
+        } else if (activeTab === "orders") {
+            showToast("Orders are usually created by customers, but you can manually record one here.", "info")
+            // Could open a manual order form here
+        } else if (activeTab === "users") {
+            showToast("User registration is handled via the front-end.", "info")
+        } else {
+            showToast(`Adding new ${activeTab} is not yet implemented.`, "info")
+        }
+    }
 
     // Action Handlers
     const handleApprovePrescription = (id: string) => {
@@ -128,6 +163,18 @@ export default function AdminDashboard() {
         refreshData()
         showToast(`Inquiry status updated to ${status}`)
         setModal(null)
+    }
+
+    const handleDeleteInquiry = (id: string) => {
+        store.deleteInquiry(id)
+        refreshData()
+        showToast("Inquiry deleted", "info")
+    }
+
+    const handleDeleteUser = (id: string) => {
+        store.deleteUser(id)
+        refreshData()
+        showToast("User deleted", "info")
     }
 
     const handleSaveProduct = () => {
@@ -166,7 +213,42 @@ export default function AdminDashboard() {
     }
 
     const handleExport = (type: string) => {
-        showToast(`Exporting ${type}...`, "info")
+        let dataToExport: any[] = []
+        if (activeTab === "orders") dataToExport = orders
+        else if (activeTab === "inventory") dataToExport = products
+        else if (activeTab === "users") dataToExport = users
+        else if (activeTab === "inquiries") dataToExport = inquiries
+        else if (activeTab === "dashboard") dataToExport = orders
+
+        if (dataToExport.length === 0) {
+            showToast("No data to export", "error")
+            return
+        }
+
+        const headers = Object.keys(dataToExport[0]).join(",")
+        const rows = dataToExport.map(row =>
+            Object.values(row).map(value =>
+                typeof value === 'object' ? JSON.stringify(value).replace(/,/g, ';') : value
+            ).join(",")
+        ).join("\n")
+
+        const csvContent = "data:text/csv;charset=utf-8," + headers + "\n" + rows
+        const encodedUri = encodeURI(csvContent)
+        const link = document.createElement("a")
+        link.setAttribute("href", encodedUri)
+        link.setAttribute("download", `${activeTab}_export_${new Date().toISOString().slice(0, 10)}.csv`)
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+
+        showToast(`Exporting ${type} successful`, "success")
+    }
+
+    const handleLogout = () => {
+        showToast("Logging out...", "info")
+        setTimeout(() => {
+            window.location.href = "/"
+        }, 1000)
     }
 
     const getStatusColor = (status: string) => {
@@ -420,7 +502,7 @@ export default function AdminDashboard() {
                                 <p className="text-sm font-black text-gray-900 truncate">Vrindacare Admin</p>
                                 <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Super Admin</p>
                             </div>
-                            <button className="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-red-500 transition-colors">
+                            <button className="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-red-500 transition-colors" onClick={handleLogout}>
                                 <LogOut className="h-4 w-4" />
                             </button>
                         </div>
@@ -451,11 +533,17 @@ export default function AdminDashboard() {
                     </div>
 
                     <div className="flex items-center gap-4">
-                        <button className="p-3 bg-gray-50 text-gray-500 hover:text-primary hover:bg-primary/5 rounded-2xl transition-all relative border shadow-sm">
+                        <button
+                            className="p-3 bg-gray-50 text-gray-500 hover:text-primary hover:bg-primary/5 rounded-2xl transition-all relative border shadow-sm"
+                            onClick={() => showToast("You have 3 new notifications", "info")}
+                        >
                             <Bell className="h-5 w-5" />
                             <span className="absolute top-3 right-3 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
                         </button>
-                        <button className="p-3 bg-gray-50 text-gray-500 hover:text-primary hover:bg-primary/5 rounded-2xl transition-all border shadow-sm">
+                        <button
+                            className="p-3 bg-gray-50 text-gray-500 hover:text-primary hover:bg-primary/5 rounded-2xl transition-all border shadow-sm"
+                            onClick={() => showToast("Settings panel coming soon", "info")}
+                        >
                             <Settings className="h-5 w-5" />
                         </button>
                     </div>
@@ -638,7 +726,7 @@ export default function AdminDashboard() {
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-gray-100">
-                                            {products.filter(p => !searchQuery || p.name.toLowerCase().includes(searchQuery.toLowerCase())).map((product) => (
+                                            {filteredProducts.map((product) => (
                                                 <tr key={product.id} className="hover:bg-gray-50/50 transition-all group">
                                                     <td className="px-8 py-5">
                                                         <div className="flex items-center gap-4">
@@ -706,7 +794,7 @@ export default function AdminDashboard() {
                                     <Button variant="outline" className="h-12 px-6 rounded-2xl font-bold border-gray-200 shadow-sm transition-all hover:bg-white active:scale-95" onClick={() => (handleExport as any)(activeTab)}>
                                         <Download className="h-4 w-4 mr-2" /> Export
                                     </Button>
-                                    <Button className="h-12 px-8 rounded-2xl font-black shadow-xl shadow-primary/20 transition-all active:scale-95">
+                                    <Button className="h-12 px-8 rounded-2xl font-black shadow-xl shadow-primary/20 transition-all active:scale-95" onClick={handleAddNew}>
                                         <Plus className="h-5 w-5 mr-2" /> Add {activeTab === "users" ? "User" : "Record"}
                                     </Button>
                                 </div>
@@ -740,30 +828,30 @@ export default function AdminDashboard() {
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-gray-100">
-                                            {activeTab === "orders" && orders.filter(o => !searchQuery || o.customer.toLowerCase().includes(searchQuery.toLowerCase())).map(o => (
-                                                <tr key={o.id} className="hover:bg-gray-50/50 transition-all group cursor-pointer" onClick={() => setModal({ type: "order", data: o })}>
+                                            {activeTab === "orders" && filteredOrders.map((order) => (
+                                                <tr key={order.id} className="hover:bg-gray-50/50 transition-all group cursor-pointer" onClick={() => setModal({ type: "order", data: order })}>
                                                     <td className="px-8 py-6">
                                                         <div className="flex items-center gap-4">
                                                             <div className="w-12 h-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center font-black shadow-sm group-hover:bg-primary group-hover:text-white transition-all">
                                                                 <ShoppingCart className="h-5 w-5" />
                                                             </div>
                                                             <div>
-                                                                <p className="font-extrabold text-gray-900 leading-tight">{o.customer}</p>
+                                                                <p className="font-extrabold text-gray-900 leading-tight">{order.customer}</p>
                                                                 <p className="text-[10px] text-gray-400 font-bold uppercase mt-1">Pharmacy Order</p>
                                                             </div>
                                                         </div>
                                                     </td>
                                                     <td className="px-8 py-6">
-                                                        <span className="text-xs font-black text-primary bg-primary/5 px-2 py-1 rounded-lg border border-primary/10">{o.id}</span>
+                                                        <span className="text-xs font-black text-primary bg-primary/5 px-2 py-1 rounded-lg border border-primary/10">{order.id}</span>
                                                     </td>
                                                     <td className="px-8 py-6">
                                                         <div className="space-y-1">
-                                                            <span className={`px-2.5 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest border ${getStatusColor(o.status)}`}>{o.status}</span>
-                                                            <p className="text-sm font-black text-gray-900 tracking-tighter">₹{o.total}</p>
+                                                            <span className={`px-2.5 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest border ${getStatusColor(order.status)}`}>{order.status}</span>
+                                                            <p className="text-sm font-black text-gray-900 tracking-tighter">₹{order.total}</p>
                                                         </div>
                                                     </td>
                                                     <td className="px-8 py-6">
-                                                        <p className="text-xs font-bold text-gray-700">{o.date}</p>
+                                                        <p className="text-xs font-bold text-gray-700">{order.date}</p>
                                                         <p className="text-[9px] text-gray-400 font-black uppercase tracking-tighter mt-1">Recorded</p>
                                                     </td>
                                                     <td className="px-8 py-6 text-right pr-12">
@@ -773,96 +861,104 @@ export default function AdminDashboard() {
                                                     </td>
                                                 </tr>
                                             ))}
-                                            {activeTab === "prescriptions" && prescriptions.filter(p => !searchQuery || p.patient.toLowerCase().includes(searchQuery.toLowerCase())).map(p => (
-                                                <tr key={p.id} className="hover:bg-gray-50/50 transition-all group cursor-pointer" onClick={() => setModal({ type: "prescription", data: p })}>
+                                            {activeTab === "prescriptions" && filteredPrescriptions.map((prescription) => (
+                                                <tr key={prescription.id} className="hover:bg-gray-50/50 transition-all group cursor-pointer" onClick={() => setModal({ type: "prescription", data: prescription })}>
                                                     <td className="px-8 py-6">
                                                         <div className="flex items-center gap-4">
                                                             <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center font-black shadow-sm group-hover:bg-emerald-600 group-hover:text-white transition-all">
                                                                 <FileText className="h-5 w-5" />
                                                             </div>
                                                             <div>
-                                                                <p className="font-extrabold text-gray-900 leading-tight">{p.patient}</p>
+                                                                <p className="font-extrabold text-gray-900 leading-tight">{prescription.patient}</p>
                                                                 <p className="text-[10px] text-gray-400 font-bold uppercase mt-1">Medical Record</p>
                                                             </div>
                                                         </div>
                                                     </td>
                                                     <td className="px-8 py-6">
-                                                        <span className="text-xs font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-100">{p.id}</span>
+                                                        <span className="text-xs font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-100">{prescription.id}</span>
                                                     </td>
                                                     <td className="px-8 py-6">
-                                                        <span className={`px-2.5 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest border ${getStatusColor(p.status)}`}>{p.status}</span>
+                                                        <span className={`px-2.5 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest border ${getStatusColor(prescription.status)}`}>{prescription.status}</span>
                                                     </td>
                                                     <td className="px-8 py-6">
-                                                        <p className="text-xs font-bold text-gray-700">{p.time}</p>
+                                                        <p className="text-xs font-bold text-gray-700">{prescription.time}</p>
                                                         <p className="text-[9px] text-gray-400 font-black uppercase tracking-tighter mt-1">Uploaded</p>
                                                     </td>
                                                     <td className="px-8 py-6 text-right pr-12">
                                                         <button className="p-3 bg-gray-100 text-gray-400 rounded-2xl group-hover:bg-emerald-600 group-hover:text-white transition-all active:scale-95">
-                                                            <Check className="h-5 w-5" />
+                                                            <Eye className="h-5 w-5" />
                                                         </button>
                                                     </td>
                                                 </tr>
                                             ))}
-                                            {activeTab === "inquiries" && inquiries.filter(i => !searchQuery || i.name.toLowerCase().includes(searchQuery.toLowerCase()) || i.subject.toLowerCase().includes(searchQuery.toLowerCase())).map(i => (
-                                                <tr key={i.id} className="hover:bg-gray-50/50 transition-all group cursor-pointer" onClick={() => setModal({ type: "inquiry", data: i })}>
+                                            {activeTab === "inquiries" && filteredInquiries.map((inquiry) => (
+                                                <tr key={inquiry.id} className="hover:bg-gray-50/50 transition-all group cursor-pointer" onClick={() => setModal({ type: "inquiry", data: inquiry })}>
                                                     <td className="px-8 py-6">
                                                         <div className="flex items-center gap-4">
                                                             <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center font-black shadow-sm group-hover:bg-blue-600 group-hover:text-white transition-all">
                                                                 <Mail className="h-5 w-5" />
                                                             </div>
                                                             <div className="max-w-[200px] overflow-hidden">
-                                                                <p className="font-extrabold text-gray-900 leading-tight truncate">{i.subject}</p>
-                                                                <p className="text-[10px] text-gray-400 font-bold uppercase mt-1 italic">{i.name}</p>
+                                                                <p className="font-extrabold text-gray-900 leading-tight truncate">{inquiry.subject}</p>
+                                                                <p className="text-[10px] text-gray-400 font-bold uppercase mt-1 italic">{inquiry.name}</p>
                                                             </div>
                                                         </div>
                                                     </td>
                                                     <td className="px-8 py-6">
-                                                        <span className="text-xs font-black text-blue-600 bg-blue-50 px-2 py-1 rounded-lg border border-blue-100">{i.id}</span>
+                                                        <span className="text-xs font-black text-blue-600 bg-blue-50 px-2 py-1 rounded-lg border border-blue-100 truncate max-w-[150px] inline-block">{inquiry.email}</span>
                                                     </td>
                                                     <td className="px-8 py-6">
-                                                        <span className={`px-2.5 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest border ${getStatusColor(i.status)}`}>{i.status}</span>
+                                                        <span className={`px-2.5 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest border ${getStatusColor(inquiry.status)}`}>{inquiry.status}</span>
                                                     </td>
                                                     <td className="px-8 py-6">
-                                                        <p className="text-xs font-bold text-gray-700">{i.date}</p>
-                                                        <p className="text-[9px] text-gray-400 font-black uppercase tracking-tighter mt-1">Sent</p>
+                                                        <p className="text-xs font-bold text-gray-700">{inquiry.date}</p>
+                                                        <p className="text-[9px] text-gray-400 font-black uppercase tracking-tighter mt-1">Inquiry Sent</p>
                                                     </td>
-                                                    <td className="px-8 py-6 text-right pr-12">
-                                                        <button className="p-3 bg-gray-100 text-gray-400 rounded-2xl group-hover:bg-blue-600 group-hover:text-white transition-all active:scale-95 shadow-sm">
-                                                            <MoreVertical className="h-5 w-5" />
+                                                    <td className="px-8 py-6 text-right pr-12 flex gap-2 justify-end">
+                                                        <button
+                                                            className="p-3 bg-rose-50 text-rose-400 rounded-2xl hover:bg-rose-600 hover:text-white transition-all active:scale-95"
+                                                            onClick={(e) => { e.stopPropagation(); handleDeleteInquiry(inquiry.id); }}
+                                                        >
+                                                            <X className="h-4 w-4" />
+                                                        </button>
+                                                        <button className="p-3 bg-gray-100 text-gray-400 rounded-2xl group-hover:bg-blue-600 group-hover:text-white transition-all active:scale-95">
+                                                            <ChevronRight className="h-5 w-5" />
                                                         </button>
                                                     </td>
                                                 </tr>
                                             ))}
-                                            {activeTab === "users" && users.filter(u => !searchQuery || u.name.toLowerCase().includes(searchQuery.toLowerCase())).map(u => (
-                                                <tr key={u.id} className="hover:bg-gray-50/50 transition-all group cursor-pointer">
+                                            {activeTab === "users" && filteredUsers.map((user) => (
+                                                <tr key={user.id} className="hover:bg-gray-50/50 transition-all group">
                                                     <td className="px-8 py-6">
                                                         <div className="flex items-center gap-4">
                                                             <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center font-black shadow-sm group-hover:bg-purple-600 group-hover:text-white transition-all">
-                                                                {u.name[0]}
+                                                                <Users className="h-5 w-5" />
                                                             </div>
                                                             <div>
-                                                                <p className="font-extrabold text-gray-900 leading-tight">{u.name}</p>
-                                                                <p className="text-[10px] text-gray-400 font-bold uppercase mt-1 font-mono tracking-tighter">{u.email}</p>
+                                                                <p className="font-extrabold text-gray-900 leading-tight">{user.name}</p>
+                                                                <p className="text-[10px] text-gray-400 font-bold uppercase mt-1 italic">{user.email}</p>
                                                             </div>
                                                         </div>
                                                     </td>
                                                     <td className="px-8 py-6">
-                                                        <span className="text-xs font-black text-purple-600 bg-purple-50 px-2 py-1 rounded-lg border border-purple-100">USR-{u.id}</span>
+                                                        <span className="text-xs font-black text-purple-600 bg-purple-50 px-2 py-1 rounded-lg border border-purple-100">{user.id}</span>
                                                     </td>
                                                     <td className="px-8 py-6">
-                                                        <div className="flex items-center gap-2">
-                                                            <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
-                                                            <span className="text-[10px] font-black text-gray-900 uppercase">Active</span>
+                                                        <div className="space-y-1">
+                                                            <span className="px-2.5 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest border bg-emerald-50 text-emerald-600 border-emerald-100">Active</span>
+                                                            <p className="text-sm font-black text-gray-900 tracking-tighter">{user.orders} Orders</p>
                                                         </div>
-                                                        <p className="text-xs font-bold text-primary mt-1">{u.orders} Orders</p>
                                                     </td>
                                                     <td className="px-8 py-6">
-                                                        <p className="text-xs font-bold text-gray-700">{u.joined}</p>
-                                                        <p className="text-[9px] text-gray-400 font-black uppercase tracking-tighter mt-1">Enrollment</p>
+                                                        <p className="text-xs font-bold text-gray-700">{user.joined}</p>
+                                                        <p className="text-[9px] text-gray-400 font-black uppercase tracking-tighter mt-1">Joined</p>
                                                     </td>
                                                     <td className="px-8 py-6 text-right pr-12">
-                                                        <button className="p-3 bg-gray-100 text-gray-400 rounded-2xl group-hover:bg-purple-600 group-hover:text-white transition-all active:scale-95 shadow-sm">
-                                                            <Users className="h-5 w-5" />
+                                                        <button
+                                                            className="p-3 bg-rose-50 text-rose-400 rounded-2xl hover:bg-rose-600 hover:text-white transition-all active:scale-95"
+                                                            onClick={() => handleDeleteUser(user.id)}
+                                                        >
+                                                            <X className="h-4 w-4" />
                                                         </button>
                                                     </td>
                                                 </tr>
