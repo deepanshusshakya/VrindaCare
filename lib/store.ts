@@ -21,8 +21,19 @@ export type Prescription = {
     notes?: string
 }
 
+export type Inquiry = {
+    id: string
+    name: string
+    email: string
+    subject: string
+    message: string
+    date: string
+    status: "New" | "Read" | "Replied"
+}
+
 const ORDERS_KEY = "vrindacare_orders"
 const PRESCRIPTIONS_KEY = "vrindacare_prescriptions"
+const INQUIRIES_KEY = "vrindacare_inquiries"
 
 export const store = {
     getOrders: (): Order[] => {
@@ -52,5 +63,19 @@ export const store = {
         const prescriptions = store.getPrescriptions()
         const updated = prescriptions.map(p => p.id === id ? { ...p, status } : p)
         localStorage.setItem(PRESCRIPTIONS_KEY, JSON.stringify(updated))
+    },
+    getInquiries: (): Inquiry[] => {
+        if (typeof window === "undefined") return []
+        const saved = localStorage.getItem(INQUIRIES_KEY)
+        return saved ? JSON.parse(saved) : []
+    },
+    saveInquiry: (inquiry: Inquiry) => {
+        const inquiries = store.getInquiries()
+        localStorage.setItem(INQUIRIES_KEY, JSON.stringify([inquiry, ...inquiries]))
+    },
+    updateInquiryStatus: (id: string, status: Inquiry["status"]) => {
+        const inquiries = store.getInquiries()
+        const updated = inquiries.map(i => i.id === id ? { ...i, status } : i)
+        localStorage.setItem(INQUIRIES_KEY, JSON.stringify(updated))
     }
 }

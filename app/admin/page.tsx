@@ -20,11 +20,21 @@ import {
     Activity,
     Menu,
     Download,
-    Pill
+    Pill,
+    Mail,
+    Bell,
+    Settings,
+    LogOut,
+    Plus,
+    Filter,
+    MoreVertical,
+    ExternalLink,
+    ChevronRight,
+    Eye
 } from "lucide-react"
 import { getAllProducts, categories } from "@/lib/data"
 import { useProducts } from "@/components/providers/product-provider"
-import { store, type Order, type Prescription } from "@/lib/store"
+import { store, type Order, type Prescription, type Inquiry } from "@/lib/store"
 
 export default function AdminDashboard() {
     const [activeTab, setActiveTab] = useState("dashboard")
@@ -34,11 +44,12 @@ export default function AdminDashboard() {
 
     const [orders, setOrders] = useState<Order[]>([])
     const [prescriptions, setPrescriptions] = useState<Prescription[]>([])
+    const [inquiries, setInquiries] = useState<Inquiry[]>([])
 
     // UI States
     const [toast, setToast] = useState<{ message: string, type: "success" | "error" | "info" } | null>(null)
     const [modal, setModal] = useState<{
-        type: "order" | "product" | "user" | "prescription" | "form",
+        type: "order" | "product" | "user" | "prescription" | "form" | "inquiry",
         data: any
     } | null>(null)
 
@@ -54,6 +65,7 @@ export default function AdminDashboard() {
     useEffect(() => {
         setOrders(store.getOrders())
         setPrescriptions(store.getPrescriptions())
+        setInquiries(store.getInquiries())
     }, [])
 
     const showToast = (message: string, type: "success" | "error" | "info" = "success") => {
@@ -64,6 +76,7 @@ export default function AdminDashboard() {
     const refreshData = () => {
         setOrders(store.getOrders())
         setPrescriptions(store.getPrescriptions())
+        setInquiries(store.getInquiries())
     }
 
     // Dashboard stats
@@ -107,6 +120,14 @@ export default function AdminDashboard() {
         store.updateOrderStatus(id, status)
         refreshData()
         showToast(`Order ${id} status updated to ${status}`)
+        setModal(null)
+    }
+
+    const handleUpdateInquiryStatus = (id: string, status: Inquiry["status"]) => {
+        store.updateInquiryStatus(id, status)
+        refreshData()
+        showToast(`Inquiry status updated to ${status}`)
+        setModal(null)
     }
 
     const handleSaveProduct = () => {
@@ -150,13 +171,16 @@ export default function AdminDashboard() {
 
     const getStatusColor = (status: string) => {
         switch (status.toLowerCase()) {
-            case "shipped": return "bg-purple-100 text-purple-800"
-            case "delivered": return "bg-green-100 text-green-800"
-            case "cancelled": return "bg-red-100 text-red-800"
-            case "approved": return "bg-green-100 text-green-800"
-            case "pending": return "bg-amber-100 text-amber-800"
-            case "rejected": return "bg-red-100 text-red-800"
-            default: return "bg-blue-100 text-blue-800"
+            case "shipped": return "bg-purple-100 text-purple-800 border-purple-200"
+            case "delivered": return "bg-green-100 text-green-800 border-green-200"
+            case "cancelled": return "bg-red-100 text-red-800 border-red-200"
+            case "approved": return "bg-green-100 text-green-800 border-green-200"
+            case "pending": return "bg-amber-100 text-amber-800 border-amber-200"
+            case "rejected": return "bg-red-100 text-red-800 border-red-200"
+            case "new": return "bg-blue-100 text-blue-800 border-blue-200"
+            case "read": return "bg-gray-100 text-gray-800 border-gray-200"
+            case "replied": return "bg-emerald-100 text-emerald-800 border-emerald-200"
+            default: return "bg-blue-100 text-blue-800 border-blue-200"
         }
     }
 
@@ -233,88 +257,114 @@ export default function AdminDashboard() {
                             )}
 
                             {modal.type === "order" && (
-                                <div className="space-y-6 text-gray-800">
-                                    <div className="flex justify-between items-start">
-                                        <div>
-                                            <p className="text-sm text-gray-500">Order ID</p>
-                                            <p className="font-bold text-lg">{modal.data.id}</p>
-                                        </div>
-                                        <div className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusColor(modal.data.status)}`}>
-                                            {modal.data.status}
-                                        </div>
-                                    </div>
-                                    <div className="space-y-3">
-                                        <p className="font-semibold border-b pb-1 text-primary">Customer Info</p>
-                                        <div className="grid grid-cols-2 gap-2 text-sm">
-                                            <p className="text-gray-500">Name:</p><p className="font-medium">{modal.data.customer}</p>
-                                            <p className="text-gray-500">Address:</p><p className="font-medium">{modal.data.shippingAddress}</p>
-                                            <p className="text-gray-500">Date:</p><p className="font-medium">{modal.data.date}</p>
-                                        </div>
-                                    </div>
-                                    <div className="space-y-3">
-                                        <p className="font-semibold border-b pb-1 text-primary">Items</p>
-                                        <div className="space-y-2">
-                                            {modal.data.items?.map((item: any, i: number) => (
-                                                <div key={i} className="flex justify-between text-sm">
-                                                    <span>{item.name} x {item.quantity}</span>
-                                                    <span className="font-medium">₹{item.price * item.quantity}</span>
+                                <div className="space-y-0">
+                                    <div className="p-0 space-y-8">
+                                        <div className="grid grid-cols-2 gap-8">
+                                            <div className="space-y-4">
+                                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b pb-2">Customer Information</p>
+                                                <div className="space-y-1">
+                                                    <p className="font-black text-gray-900 text-lg uppercase tracking-tight">{modal.data.customer}</p>
+                                                    <p className="text-sm font-bold text-gray-500 leading-relaxed">{modal.data.shippingAddress}</p>
+                                                    <p className="text-[10px] font-black text-primary mt-2 uppercase tracking-tighter">Verified Account</p>
                                                 </div>
-                                            ))}
-                                            <div className="border-t pt-2 mt-2 flex justify-between font-bold text-lg text-primary">
-                                                <span>Total</span>
-                                                <span>₹{modal.data.total}</span>
+                                            </div>
+                                            <div className="space-y-4 text-right">
+                                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b pb-2">Transaction Meta</p>
+                                                <div className="space-y-1">
+                                                    <p className="text-sm font-bold text-gray-900">Date: <span className="font-black">{modal.data.date}</span></p>
+                                                    <p className="text-sm font-bold text-gray-900">Payment: <span className="font-black text-emerald-600">Prepaid Online</span></p>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                    <div className="bg-gray-100 p-4 rounded-xl space-y-3">
-                                        <p className="text-xs font-bold text-gray-500 uppercase text-center">Update Status</p>
-                                        <div className="grid grid-cols-2 gap-2">
-                                            {["Shipped", "Delivered", "Cancelled"].map((s) => (
-                                                <button
-                                                    key={s}
-                                                    onClick={() => handleUpdateOrderStatus(modal.data.id, s as any)}
-                                                    className="px-3 py-2 bg-white border rounded-lg text-xs font-bold hover:bg-primary hover:text-white transition-all shadow-sm"
-                                                >
-                                                    {s}
-                                                </button>
-                                            ))}
+
+                                        <div className="space-y-4">
+                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b pb-2">Order Items</p>
+                                            <div className="bg-gray-50/50 rounded-2xl border p-2 overflow-hidden">
+                                                <div className="divide-y">
+                                                    {modal.data.items?.map((item: any, idx: number) => (
+                                                        <div key={idx} className="flex justify-between items-center p-4 hover:bg-white transition-all">
+                                                            <div className="flex items-center gap-4">
+                                                                <div className="w-10 h-10 bg-white border rounded-xl flex items-center justify-center font-black text-primary text-xs shadow-sm">{idx + 1}</div>
+                                                                <div>
+                                                                    <p className="font-black text-gray-900 text-sm italic">{item.name}</p>
+                                                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Qty: {item.quantity}</p>
+                                                                </div>
+                                                            </div>
+                                                            <p className="font-black text-gray-900 tracking-tighter">₹{(item.price * item.quantity).toFixed(2)}</p>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                                <div className="p-6 bg-white border-t flex justify-between items-center">
+                                                    <p className="text-lg font-black text-gray-900 uppercase tracking-tight">Total Amount</p>
+                                                    <p className="text-3xl font-black text-primary tracking-tighter">₹{modal.data.total}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-4 pt-4 border-t">
+                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Update Order Status</p>
+                                            <div className="flex gap-4">
+                                                <Button variant="outline" onClick={() => handleUpdateOrderStatus(modal.data.id, "Shipped")} className="flex-1 h-14 font-black rounded-2xl border-gray-200 hover:bg-primary/5 hover:text-primary hover:border-primary/20 transition-all uppercase text-xs tracking-widest">Mark Shipped</Button>
+                                                <Button onClick={() => handleUpdateOrderStatus(modal.data.id, "Delivered")} className="flex-1 h-14 font-black rounded-2xl bg-primary text-white shadow-xl shadow-primary/20 hover:scale-105 transition-all active:scale-95 uppercase text-xs tracking-widest">Success Deliver</Button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             )}
 
                             {modal.type === "prescription" && (
-                                <div className="space-y-6">
-                                    <div className="w-full h-48 bg-gray-100 rounded-xl flex items-center justify-center border-2 border-dashed border-gray-300 relative overflow-hidden text-gray-400">
-                                        <FileText className="h-12 w-12" />
-                                        <p className="absolute bottom-4 text-xs font-medium">No Image Uploaded</p>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <p className="text-sm text-gray-500">Patient</p>
-                                        <p className="font-bold text-lg">{modal.data.patient}</p>
-                                        {modal.data.notes && (
-                                            <p className="text-sm text-gray-600 bg-amber-50 p-3 rounded-lg border border-amber-100 italic">
-                                                "{modal.data.notes}"
-                                            </p>
-                                        )}
-                                    </div>
-                                    {modal.data.status === "Pending" && (
-                                        <div className="flex gap-4 pt-4 border-t">
-                                            <Button
-                                                variant="outline"
-                                                onClick={() => handleRejectPrescription(modal.data.id)}
-                                                className="flex-1 text-red-600 border-red-100 hover:bg-red-50"
-                                            >
-                                                Reject
-                                            </Button>
-                                            <Button
-                                                onClick={() => handleApprovePrescription(modal.data.id)}
-                                                className="flex-1 bg-green-600 hover:bg-green-700"
-                                            >
-                                                Approve
-                                            </Button>
+                                <div className="space-y-8">
+                                    <div className="bg-white border-2 border-dashed border-emerald-100 rounded-[2rem] p-4 relative overflow-hidden group">
+                                        <div className="w-full h-48 bg-gray-50 flex items-center justify-center rounded-2xl">
+                                            <FileText className="h-12 w-12 text-emerald-200" />
+                                            <p className="absolute bottom-10 text-[10px] font-black uppercase text-emerald-300 tracking-widest">Secure Verification Tunnel</p>
                                         </div>
-                                    )}
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-8">
+                                        <div className="p-6 bg-gray-50 rounded-2xl border">
+                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Patient Detail</p>
+                                            <p className="font-extrabold text-gray-900 text-lg uppercase tracking-tight">{modal.data.patient}</p>
+                                            <p className="text-[10px] text-emerald-600 font-bold uppercase mt-1 tracking-widest">Medical History: Checked</p>
+                                        </div>
+                                        <div className="p-6 bg-gray-50 rounded-2xl border">
+                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Arrival Timeline</p>
+                                            <p className="font-extrabold text-gray-900 text-lg uppercase tracking-tight">{modal.data.time}</p>
+                                            <p className="text-[10px] text-gray-400 font-bold uppercase mt-1 tracking-widest">Priority: High</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-4 pt-4 border-t">
+                                        <Button variant="outline" onClick={() => handleRejectPrescription(modal.data.id)} className="flex-1 h-16 font-black rounded-2xl border-rose-200 text-rose-600 hover:bg-rose-50 hover:border-rose-400 transition-all uppercase text-xs tracking-widest">Reject Record</Button>
+                                        <Button onClick={() => handleApprovePrescription(modal.data.id)} className="flex-1 h-16 font-black rounded-2xl bg-emerald-600 text-white shadow-xl shadow-emerald-200 hover:scale-105 transition-all active:scale-95 uppercase text-xs tracking-widest">Verify & Approve</Button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {modal.type === "inquiry" && (
+                                <div className="space-y-8">
+                                    <div className="p-6 bg-white border shadow-sm rounded-2xl space-y-4">
+                                        <div className="flex items-center gap-4 border-b pb-4">
+                                            <div className="w-12 h-12 bg-blue-600 text-white rounded-2xl flex items-center justify-center font-black text-xl shadow-lg shadow-blue-200">{modal.data.name[0]}</div>
+                                            <div>
+                                                <p className="font-black text-gray-900 text-lg tracking-tight">{modal.data.name}</p>
+                                                <p className="text-xs font-bold text-blue-600">{modal.data.email}</p>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Subject Header</p>
+                                            <p className="font-extrabold text-gray-900 text-xl tracking-tight italic">"{modal.data.subject}"</p>
+                                        </div>
+                                        <div className="p-6 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Message Body</p>
+                                            <p className="text-gray-700 text-sm leading-relaxed font-medium capitalize">{modal.data.message}</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-4 pt-4 border-t">
+                                        <Button variant="outline" onClick={() => handleUpdateInquiryStatus(modal.data.id, "Read")} className="flex-1 h-14 font-black rounded-2xl border-gray-200 hover:bg-gray-100 transition-all uppercase text-xs tracking-widest">Mark as Read</Button>
+                                        <Button onClick={() => handleUpdateInquiryStatus(modal.data.id, "Replied")} className="flex-1 h-14 font-black rounded-2xl bg-blue-600 text-white shadow-xl shadow-blue-200 hover:scale-105 transition-all active:scale-95 uppercase text-xs tracking-widest">Mark as Replied</Button>
+                                    </div>
                                 </div>
                             )}
                         </div>
@@ -323,54 +373,91 @@ export default function AdminDashboard() {
             )}
 
             {/* Sidebar */}
-            <div className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-white border-r transition-all duration-300 hidden md:flex flex-col z-40`}>
-                <div className="p-6 flex items-center justify-between border-b">
-                    {sidebarOpen && <span className="text-xl font-bold text-primary flex items-center gap-2"><Pill className="h-6 w-6" /> Admin</span>}
-                    <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors border shadow-sm">
-                        <Menu className="h-5 w-5 text-gray-600" />
-                    </button>
+            <div className={`${sidebarOpen ? 'w-72' : 'w-24'} bg-white border-r transition-all duration-500 hidden md:flex flex-col z-40 shadow-sm relative`}>
+                <div className="p-8 flex items-center justify-between">
+                    {sidebarOpen ? (
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center border border-primary/20">
+                                <Pill className="h-6 w-6 text-primary" />
+                            </div>
+                            <span className="text-xl font-black text-gray-900 tracking-tight">Vrindacare</span>
+                        </div>
+                    ) : (
+                        <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center mx-auto border border-primary/20">
+                            <Pill className="h-6 w-6 text-primary" />
+                        </div>
+                    )}
                 </div>
-                <nav className="flex-1 p-4 space-y-2 mt-4">
+
+                <nav className="flex-1 px-4 space-y-1.5 mt-4">
                     {[
                         { id: "dashboard", icon: LayoutDashboard, label: "Dashboard" },
                         { id: "orders", icon: ShoppingCart, label: "Orders" },
                         { id: "inventory", icon: Package, label: "Inventory" },
                         { id: "prescriptions", icon: FileText, label: "Prescriptions" },
+                        { id: "inquiries", icon: Mail, label: "Inquiries" },
                         { id: "users", icon: Users, label: "Users" },
                     ].map((item) => (
                         <button
                             key={item.id}
                             onClick={() => setActiveTab(item.id)}
-                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${activeTab === item.id ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-gray-600 hover:bg-gray-100"}`}
+                            className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all duration-300 font-bold group relative ${activeTab === item.id ? "bg-primary text-white shadow-xl shadow-primary/25" : "text-gray-500 hover:bg-gray-50 hover:text-primary"}`}
                         >
-                            <item.icon className="h-5 w-5 shrink-0" />
-                            {sidebarOpen && <span>{item.label}</span>}
+                            <item.icon className={`h-5 w-5 shrink-0 transition-transform duration-300 group-hover:scale-110 ${activeTab === item.id ? "text-white" : "text-gray-400 group-hover:text-primary"}`} />
+                            {sidebarOpen && <span className="text-sm">{item.label}</span>}
+                            {activeTab === item.id && (
+                                <div className="absolute left-0 w-1.5 h-6 bg-white rounded-r-full" />
+                            )}
                         </button>
                     ))}
                 </nav>
+
+                <div className="p-4 mt-auto border-t bg-gray-50/50">
+                    {sidebarOpen ? (
+                        <div className="bg-white p-4 rounded-2xl border shadow-sm flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center font-black shadow-lg shadow-primary/20">V</div>
+                            <div className="flex-1 overflow-hidden">
+                                <p className="text-sm font-black text-gray-900 truncate">Vrindacare Admin</p>
+                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Super Admin</p>
+                            </div>
+                            <button className="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-red-500 transition-colors">
+                                <LogOut className="h-4 w-4" />
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="w-12 h-12 rounded-xl bg-primary text-white flex items-center justify-center font-black mx-auto shadow-lg shadow-primary/20 cursor-pointer">V</div>
+                    )}
+                </div>
             </div>
 
             {/* Main Content */}
             <div className="flex-1 flex flex-col h-screen overflow-hidden">
-                <header className="h-20 bg-white border-b flex items-center justify-between px-8 z-30">
-                    <div className="flex items-center gap-4 bg-gray-50 px-4 py-2 rounded-xl border border-gray-200 min-w-[300px]">
-                        <Search className="h-5 w-5 text-gray-400" />
-                        <input
-                            type="text"
-                            placeholder="Search everything..."
-                            className="bg-transparent border-none outline-none w-full text-sm"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                        />
-                    </div>
-                    <div className="flex items-center gap-6">
-                        <div className="flex items-center gap-3 bg-gray-50 pr-4 pl-1 py-1 rounded-full border border-gray-200">
-                            <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-bold">V</div>
-                            <div className="hidden lg:block">
-                                <p className="text-sm font-bold text-gray-900">Vrindacare Admin</p>
-                                <p className="text-[10px] text-gray-500 font-bold uppercase">Super Admin</p>
-                            </div>
+                <header className="h-24 bg-white/80 backdrop-blur-md border-b flex items-center justify-between px-10 z-30 sticky top-0">
+                    <div className="flex items-center gap-6 flex-1">
+                        <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2.5 hover:bg-gray-100 rounded-xl transition-all border shadow-sm active:scale-95 group">
+                            <Menu className={`h-5 w-5 text-gray-600 transition-transform ${sidebarOpen ? '' : 'rotate-180'}`} />
+                        </button>
+
+                        <div className="flex items-center gap-4 bg-gray-100 px-5 py-3 rounded-2xl border border-transparent focus-within:border-primary/30 focus-within:bg-white focus-within:shadow-xl focus-within:shadow-primary/5 transition-all w-full max-w-md group">
+                            <Search className="h-5 w-5 text-gray-400 group-focus-within:text-primary transition-colors" />
+                            <input
+                                type="text"
+                                placeholder={`Search ${activeTab}...`}
+                                className="bg-transparent border-none outline-none w-full text-sm font-medium placeholder:text-gray-400 text-gray-700"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
                         </div>
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                        <button className="p-3 bg-gray-50 text-gray-500 hover:text-primary hover:bg-primary/5 rounded-2xl transition-all relative border shadow-sm">
+                            <Bell className="h-5 w-5" />
+                            <span className="absolute top-3 right-3 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
+                        </button>
+                        <button className="p-3 bg-gray-50 text-gray-500 hover:text-primary hover:bg-primary/5 rounded-2xl transition-all border shadow-sm">
+                            <Settings className="h-5 w-5" />
+                        </button>
                     </div>
                 </header>
 
@@ -389,21 +476,27 @@ export default function AdminDashboard() {
 
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                                 {[
-                                    { label: "Orders", value: stats.totalOrders, icon: ShoppingCart, trend: stats.ordersTrend, color: "blue" },
-                                    { label: "Revenue", value: `₹${stats.totalRevenue.toLocaleString()}`, icon: DollarSign, trend: stats.revenueTrend, color: "green" },
-                                    { label: "Users", value: stats.activeUsers, icon: Users, trend: stats.usersTrend, color: "purple" },
-                                    { label: "Pending", value: stats.pendingPrescriptions, icon: FileText, trend: stats.prescriptionsTrend, color: "amber" },
+                                    { label: "Orders", value: stats.totalOrders, icon: ShoppingCart, trend: stats.ordersTrend, color: "emerald", bg: "bg-emerald-50", text: "text-emerald-600" },
+                                    { label: "Revenue", value: `₹${stats.totalRevenue.toLocaleString()}`, icon: DollarSign, trend: stats.revenueTrend, color: "blue", bg: "bg-blue-50", text: "text-blue-600" },
+                                    { label: "Users", value: stats.activeUsers, icon: Users, trend: stats.usersTrend, color: "purple", bg: "bg-purple-50", text: "text-purple-600" },
+                                    { label: "Verification", value: stats.pendingPrescriptions, icon: Pill, trend: stats.prescriptionsTrend, color: "amber", bg: "bg-amber-50", text: "text-amber-600" },
                                 ].map((stat, i) => (
-                                    <Card key={i} className="hover:border-primary/50 transition-colors cursor-default">
-                                        <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                            <CardTitle className="text-sm font-bold text-gray-500 uppercase tracking-widest">{stat.label}</CardTitle>
-                                            <stat.icon className={`h-5 w-5 text-${stat.color}-600`} />
+                                    <Card key={i} className="border-none shadow-sm hover:shadow-xl hover:shadow-primary/5 transition-all duration-500 cursor-default group overflow-hidden relative">
+                                        <div className={`absolute top-0 right-0 w-24 h-24 ${stat.bg} rounded-full -mr-12 -mt-12 transition-transform duration-500 group-hover:scale-110 opacity-50`} />
+                                        <CardHeader className="flex flex-row items-center justify-between pb-2 relative z-10">
+                                            <CardTitle className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">{stat.label}</CardTitle>
+                                            <div className={`p-2.5 ${stat.bg} ${stat.text} rounded-xl`}>
+                                                <stat.icon className="h-5 w-5" />
+                                            </div>
                                         </CardHeader>
-                                        <CardContent>
-                                            <div className="text-2xl font-black text-gray-900">{stat.value}</div>
-                                            <div className={`flex items-center gap-1 text-[10px] font-bold mt-1 ${stat.trend > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                                {stat.trend > 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                                                {stat.trend}% vs last month
+                                        <CardContent className="relative z-10">
+                                            <div className="text-3xl font-black text-gray-900 tracking-tight">{stat.value}</div>
+                                            <div className={`flex items-center gap-1.5 text-xs font-bold mt-2 ${stat.trend > 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                                <div className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded-full ${stat.trend > 0 ? 'bg-emerald-50' : 'bg-rose-50'}`}>
+                                                    {stat.trend > 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                                                    {Math.abs(stat.trend)}%
+                                                </div>
+                                                <span className="text-gray-400 font-medium">vs last month</span>
                                             </div>
                                         </CardContent>
                                     </Card>
@@ -411,67 +504,87 @@ export default function AdminDashboard() {
                             </div>
 
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                                <Card>
-                                    <CardHeader className="flex flex-row items-center justify-between">
+                                <Card className="border-none shadow-sm overflow-hidden">
+                                    <CardHeader className="flex flex-row items-center justify-between bg-gray-50/50 pb-6 border-b">
                                         <div>
-                                            <CardTitle className="text-lg">Recent Orders</CardTitle>
-                                            <CardDescription>Latest transactions in your store</CardDescription>
+                                            <CardTitle className="text-xl font-black text-gray-900">Recent Transactions</CardTitle>
+                                            <CardDescription className="text-xs font-bold text-gray-400 uppercase mt-1">Incoming medicine orders</CardDescription>
                                         </div>
-                                        <Button variant="ghost" className="text-primary font-bold" onClick={() => setActiveTab("orders")}>View All</Button>
+                                        <Button variant="ghost" className="text-primary font-black text-xs uppercase tracking-widest hover:bg-primary/5" onClick={() => setActiveTab("orders")}>View All</Button>
                                     </CardHeader>
-                                    <CardContent>
-                                        <div className="space-y-4">
+                                    <CardContent className="p-0">
+                                        <div className="divide-y">
                                             {recentOrders.map((order) => (
                                                 <div
                                                     key={order.id}
-                                                    className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer border border-transparent hover:border-gray-200"
+                                                    className="flex items-center justify-between p-6 hover:bg-gray-50 transition-all cursor-pointer group"
                                                     onClick={() => setModal({ type: "order", data: order })}
                                                 >
                                                     <div className="flex gap-4 items-center">
-                                                        <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center border font-bold text-xs">#{order.id.slice(-4)}</div>
+                                                        <div className="w-12 h-12 bg-gray-100 rounded-2xl flex items-center justify-center border transition-colors group-hover:border-primary/20 group-hover:bg-primary/5">
+                                                            <ShoppingCart className="h-5 w-5 text-gray-400 group-hover:text-primary transition-colors" />
+                                                        </div>
                                                         <div>
-                                                            <p className="font-bold text-sm">{order.customer}</p>
-                                                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{order.status}</p>
+                                                            <p className="font-black text-gray-900 leading-tight">{order.customer}</p>
+                                                            <div className="flex items-center gap-2 mt-1">
+                                                                <span className="text-[10px] font-black text-gray-400 uppercase">{order.id}</span>
+                                                                <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase border ${getStatusColor(order.status)}`}>{order.status}</span>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                     <div className="text-right">
-                                                        <p className="font-bold text-sm text-primary">₹{order.total}</p>
-                                                        <p className="text-[10px] text-gray-400">{order.date}</p>
+                                                        <p className="font-black text-primary text-lg">₹{order.total}</p>
+                                                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">{order.date}</p>
                                                     </div>
                                                 </div>
                                             ))}
-                                            {recentOrders.length === 0 && <p className="text-center py-8 text-sm text-gray-400 italic">No orders yet</p>}
+                                            {recentOrders.length === 0 && <div className="p-12 text-center text-gray-400 italic">No orders yet</div>}
                                         </div>
                                     </CardContent>
                                 </Card>
 
-                                <Card>
-                                    <CardHeader className="flex flex-row items-center justify-between">
+                                <Card className="border-none shadow-sm overflow-hidden">
+                                    <CardHeader className="flex flex-row items-center justify-between bg-gray-50/50 pb-6 border-b">
                                         <div>
-                                            <CardTitle className="text-lg">Pending Verification</CardTitle>
-                                            <CardDescription>Prescriptions awaiting approval</CardDescription>
+                                            <CardTitle className="text-xl font-black text-gray-900">Pending Approvals</CardTitle>
+                                            <CardDescription className="text-xs font-bold text-gray-400 uppercase mt-1">Prescriptions waiting for verification</CardDescription>
                                         </div>
-                                        <Button variant="ghost" className="text-primary font-bold" onClick={() => setActiveTab("prescriptions")}>Verify</Button>
+                                        <Button variant="ghost" className="text-primary font-black text-xs uppercase tracking-widest hover:bg-primary/5" onClick={() => setActiveTab("prescriptions")}>Review All</Button>
                                     </CardHeader>
-                                    <CardContent>
-                                        <div className="space-y-4">
+                                    <CardContent className="p-0">
+                                        <div className="divide-y">
                                             {prescriptions.filter(p => p.status === "Pending").map((rx) => (
                                                 <div
                                                     key={rx.id}
-                                                    className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-transparent hover:border-primary/20 transition-all cursor-pointer"
+                                                    className="flex items-center justify-between p-6 hover:bg-gray-50 transition-all cursor-pointer group"
                                                     onClick={() => setModal({ type: "prescription", data: rx })}
                                                 >
                                                     <div className="flex gap-4 items-center">
-                                                        <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center border border-blue-100 font-bold text-xs cursor-pointer">RX</div>
+                                                        <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center border border-emerald-100 group-hover:bg-emerald-600 group-hover:text-white transition-all">
+                                                            <FileText className="h-5 w-5" />
+                                                        </div>
                                                         <div>
-                                                            <p className="font-bold text-sm">{rx.patient}</p>
-                                                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{rx.id}</p>
+                                                            <p className="font-black text-gray-900 leading-tight">{rx.patient}</p>
+                                                            <p className="text-[10px] font-black text-gray-400 uppercase mt-1">Uploaded {rx.time}</p>
                                                         </div>
                                                     </div>
-                                                    <Button size="sm" className="h-8 text-[10px] font-black uppercase tracking-widest bg-primary text-white">Review</Button>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="text-right hidden sm:block">
+                                                            <p className="text-[10px] font-black text-emerald-600 uppercase">Emergency</p>
+                                                            <p className="text-[10px] font-bold text-gray-400">Review Required</p>
+                                                        </div>
+                                                        <Button size="sm" className="h-9 px-4 text-[10px] font-black uppercase tracking-widest bg-primary text-white shadow-lg shadow-primary/20 hover:scale-105 transition-all active:scale-95">Open Rx</Button>
+                                                    </div>
                                                 </div>
                                             ))}
-                                            {prescriptions.filter(p => p.status === "Pending").length === 0 && <p className="text-center py-8 text-sm text-gray-400 italic text-green-600 font-bold">Queue is clear! ✅</p>}
+                                            {prescriptions.filter(p => p.status === "Pending").length === 0 && (
+                                                <div className="p-20 text-center space-y-3">
+                                                    <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto">
+                                                        <Check className="h-8 w-8 text-emerald-500" />
+                                                    </div>
+                                                    <p className="font-black text-emerald-600 text-sm">All clear! No pending prescriptions.</p>
+                                                </div>
+                                            )}
                                         </div>
                                     </CardContent>
                                 </Card>
@@ -497,34 +610,59 @@ export default function AdminDashboard() {
                                 </Button>
                             </div>
 
-                            <div className="bg-white rounded-3xl border shadow-sm overflow-hidden">
+                            <div className="bg-white rounded-[2rem] shadow-sm border overflow-hidden">
+                                <div className="p-6 border-b bg-gray-50/50 flex flex-wrap items-center justify-between gap-4">
+                                    <div className="flex items-center gap-4">
+                                        <div className="p-2 bg-white border rounded-xl shadow-sm">
+                                            <Filter className="h-4 w-4 text-gray-400" />
+                                        </div>
+                                        <div className="flex gap-2">
+                                            {["All", "Medicines", "Wellness", "Wellness"].map(cat => (
+                                                <button key={cat} className="px-4 py-1.5 bg-white border rounded-full text-xs font-bold text-gray-500 hover:border-primary hover:text-primary transition-all shadow-sm">
+                                                    {cat}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">{products.length} Products Found</p>
+                                </div>
                                 <div className="overflow-x-auto">
-                                    <table className="w-full">
+                                    <table className="w-full border-collapse">
                                         <thead>
-                                            <tr className="bg-gray-50 border-b border-gray-100">
-                                                <th className="px-8 py-6 text-left text-xs font-black text-gray-400 uppercase tracking-widest whitespace-nowrap">Product Details</th>
-                                                <th className="px-8 py-6 text-left text-xs font-black text-gray-400 uppercase tracking-widest whitespace-nowrap">Category</th>
-                                                <th className="px-8 py-6 text-left text-xs font-black text-gray-400 uppercase tracking-widest whitespace-nowrap">Price</th>
-                                                <th className="px-8 py-6 text-right text-xs font-black text-gray-400 uppercase tracking-widest whitespace-nowrap pr-12">Actions</th>
+                                            <tr className="border-b bg-white text-gray-400">
+                                                <th className="px-8 py-5 text-left text-[10px] font-black uppercase tracking-widest">Product Information</th>
+                                                <th className="px-8 py-5 text-left text-[10px] font-black uppercase tracking-widest">Category</th>
+                                                <th className="px-8 py-5 text-left text-[10px] font-black uppercase tracking-widest">Price</th>
+                                                <th className="px-8 py-5 text-left text-[10px] font-black uppercase tracking-widest">Status</th>
+                                                <th className="px-8 py-5 text-right text-[10px] font-black uppercase tracking-widest pr-12">Manage</th>
                                             </tr>
                                         </thead>
-                                        <tbody className="divide-y divide-gray-50">
+                                        <tbody className="divide-y divide-gray-100">
                                             {products.filter(p => !searchQuery || p.name.toLowerCase().includes(searchQuery.toLowerCase())).map((product) => (
-                                                <tr key={product.id} className="hover:bg-gray-50/50 transition-colors group">
-                                                    <td className="px-8 py-6">
+                                                <tr key={product.id} className="hover:bg-gray-50/50 transition-all group">
+                                                    <td className="px-8 py-5">
                                                         <div className="flex items-center gap-4">
-                                                            <div className="w-12 h-12 bg-gray-50 rounded-xl overflow-hidden border p-1 group-hover:border-primary/50 transition-all">
-                                                                <img src={product.image || "/images/placeholder.jpg"} className="w-full h-full object-contain" />
+                                                            <div className="w-14 h-14 bg-gray-100 rounded-2xl overflow-hidden border p-2 group-hover:border-primary/20 group-hover:bg-white transition-all duration-500">
+                                                                <img src={product.image || "/images/placeholder.jpg"} className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500" />
                                                             </div>
-                                                            <p className="font-extrabold text-gray-900 text-base">{product.name}</p>
+                                                            <div>
+                                                                <p className="font-extrabold text-gray-900 text-sm">{product.name}</p>
+                                                                <p className="text-[10px] text-gray-400 font-bold uppercase mt-0.5 tracking-tight">ID: {product.id.slice(-6)}</p>
+                                                            </div>
                                                         </div>
                                                     </td>
-                                                    <td className="px-8 py-6">
-                                                        <span className="px-4 py-1.5 bg-gray-100 text-gray-600 rounded-xl text-[10px] font-black uppercase tracking-widest border border-gray-200">{product.category}</span>
+                                                    <td className="px-8 py-5">
+                                                        <span className="px-3.5 py-1 bg-white border text-gray-600 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm">{product.category}</span>
                                                     </td>
-                                                    <td className="px-8 py-6 font-black text-gray-900 text-lg">₹{product.price}</td>
-                                                    <td className="px-8 py-6 text-right pr-12">
-                                                        <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                                                    <td className="px-8 py-5 font-black text-gray-900">₹{product.price}</td>
+                                                    <td className="px-8 py-5">
+                                                        <div className="flex items-center gap-1.5">
+                                                            <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                                                            <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">In Stock</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-8 py-5 text-right pr-12">
+                                                        <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
                                                             <button
                                                                 onClick={() => {
                                                                     setProductForm({
@@ -536,15 +674,15 @@ export default function AdminDashboard() {
                                                                     })
                                                                     setModal({ type: "form", data: product })
                                                                 }}
-                                                                className="p-3 bg-blue-50 text-blue-600 rounded-2xl hover:bg-blue-600 hover:text-white transition-all shadow-sm active:scale-95 border border-blue-100"
+                                                                className="p-2.5 bg-white border text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm active:scale-95"
                                                             >
-                                                                <TrendingUp className="h-5 w-5" />
+                                                                <TrendingUp className="h-4 w-4" />
                                                             </button>
                                                             <button
                                                                 onClick={() => handleDeleteProduct(product.id, product.name)}
-                                                                className="p-3 bg-red-50 text-red-600 rounded-2xl hover:bg-red-600 hover:text-white transition-all shadow-sm active:scale-95 border border-red-100"
+                                                                className="p-2.5 bg-white border text-rose-600 rounded-xl hover:bg-rose-600 hover:text-white transition-all shadow-sm active:scale-95"
                                                             >
-                                                                <X className="h-5 w-5" />
+                                                                <X className="h-4 w-4" />
                                                             </button>
                                                         </div>
                                                     </td>
@@ -557,52 +695,181 @@ export default function AdminDashboard() {
                         </div>
                     )}
 
-                    {["orders", "prescriptions", "users"].includes(activeTab) && (
-                        <div className="bg-white rounded-3xl p-16 text-center border border-dashed border-gray-300 animate-in fade-in duration-500">
-                            <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                                <Activity className="h-12 w-12 text-primary" />
+                    {["orders", "prescriptions", "users", "inquiries"].includes(activeTab) && (
+                        <div className="space-y-6 animate-in fade-in duration-500 pb-20">
+                            <div className="flex items-center justify-between px-2">
+                                <div>
+                                    <h1 className="text-4xl font-black text-gray-900 tracking-tight capitalize">{activeTab}</h1>
+                                    <p className="text-gray-500 font-bold mt-1 uppercase text-[10px] tracking-[0.3em]">Secure Record Management</p>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <Button variant="outline" className="h-12 px-6 rounded-2xl font-bold border-gray-200 shadow-sm transition-all hover:bg-white active:scale-95" onClick={() => (handleExport as any)(activeTab)}>
+                                        <Download className="h-4 w-4 mr-2" /> Export
+                                    </Button>
+                                    <Button className="h-12 px-8 rounded-2xl font-black shadow-xl shadow-primary/20 transition-all active:scale-95">
+                                        <Plus className="h-5 w-5 mr-2" /> Add {activeTab === "users" ? "User" : "Record"}
+                                    </Button>
+                                </div>
                             </div>
-                            <h2 className="text-2xl font-black text-gray-900 capitalize tracking-tight">{activeTab} Database</h2>
-                            <p className="text-gray-500 mt-2 font-medium max-w-sm mx-auto">Accessing secure medical records. You can view details by clicking on items below.</p>
 
-                            <div className="mt-12 flex flex-wrap justify-center gap-6">
-                                {activeTab === "orders" && orders.map(o => (
-                                    <div key={o.id} className="p-6 bg-gray-50 rounded-2xl border-2 border-transparent hover:border-primary text-left min-w-[250px] cursor-pointer transition-all active:scale-95 shadow-sm" onClick={() => setModal({ type: "order", data: o })}>
-                                        <div className="flex justify-between items-start mb-4">
-                                            <p className="font-black text-lg text-primary">{o.id}</p>
-                                            <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider ${getStatusColor(o.status)}`}>{o.status}</span>
-                                        </div>
-                                        <p className="text-sm font-bold text-gray-700">{o.customer}</p>
-                                        <p className="text-xs text-gray-400 mt-1">{o.date}</p>
-                                        <p className="text-lg font-black text-gray-900 mt-4">₹{o.total}</p>
-                                    </div>
-                                ))}
-                                {activeTab === "prescriptions" && prescriptions.map(p => (
-                                    <div key={p.id} className="p-6 bg-gray-50 rounded-2xl border-2 border-transparent hover:border-primary text-left min-w-[250px] cursor-pointer transition-all active:scale-95 shadow-sm" onClick={() => setModal({ type: "prescription", data: p })}>
-                                        <div className="flex justify-between items-start mb-4">
-                                            <p className="font-black text-lg text-primary">{p.id}</p>
-                                            <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider ${getStatusColor(p.status)}`}>{p.status}</span>
-                                        </div>
-                                        <p className="text-sm font-bold text-gray-700">{p.patient}</p>
-                                        <p className="text-xs text-gray-400 mt-1">{p.time}</p>
-                                    </div>
-                                ))}
-                                {activeTab === "users" && users.map(u => (
-                                    <div key={u.id} className="p-6 bg-gray-50 rounded-2xl border-2 border-transparent hover:border-primary text-left min-w-[250px] cursor-pointer transition-all active:scale-95 shadow-sm" onClick={() => showToast(`Viewing ${u.name}'s profile`)}>
-                                        <div className="flex items-center gap-4 mb-4">
-                                            <div className="w-12 h-12 bg-primary text-white rounded-full flex items-center justify-center font-black">{u.name[0]}</div>
-                                            <div>
-                                                <p className="font-black text-gray-900">{u.name}</p>
-                                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Customer</p>
-                                            </div>
-                                        </div>
-                                        <p className="text-sm font-medium text-gray-500">{u.email}</p>
-                                        <div className="flex justify-between mt-4">
-                                            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Total Orders</p>
-                                            <p className="font-black text-primary">{u.orders}</p>
+                            <div className="bg-white rounded-[2rem] shadow-sm border overflow-hidden">
+                                <div className="p-6 border-b bg-gray-50/50 flex flex-wrap items-center justify-between gap-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="flex gap-2">
+                                            {["All", "Pending", "Success", "Secondary"].map(f => (
+                                                <button key={f} className="px-5 py-2 bg-white border rounded-xl text-xs font-black text-gray-500 hover:border-primary hover:text-primary transition-all shadow-sm uppercase tracking-widest">
+                                                    {f}
+                                                </button>
+                                            ))}
                                         </div>
                                     </div>
-                                ))}
+                                    <div className="p-2 bg-white border rounded-xl shadow-sm cursor-pointer hover:bg-gray-50">
+                                        <Filter className="h-4 w-4 text-gray-400" />
+                                    </div>
+                                </div>
+
+                                <div className="overflow-x-auto">
+                                    <table className="w-full border-collapse">
+                                        <thead>
+                                            <tr className="border-b bg-white text-gray-400">
+                                                <th className="px-8 py-5 text-left text-[10px] font-black uppercase tracking-widest">Core Information</th>
+                                                <th className="px-8 py-5 text-left text-[10px] font-black uppercase tracking-widest">ID / Type</th>
+                                                <th className="px-8 py-5 text-left text-[10px] font-black uppercase tracking-widest">Status / Value</th>
+                                                <th className="px-8 py-5 text-left text-[10px] font-black uppercase tracking-widest">Date / Time</th>
+                                                <th className="px-8 py-5 text-right text-[10px] font-black uppercase tracking-widest pr-12">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-100">
+                                            {activeTab === "orders" && orders.filter(o => !searchQuery || o.customer.toLowerCase().includes(searchQuery.toLowerCase())).map(o => (
+                                                <tr key={o.id} className="hover:bg-gray-50/50 transition-all group cursor-pointer" onClick={() => setModal({ type: "order", data: o })}>
+                                                    <td className="px-8 py-6">
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="w-12 h-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center font-black shadow-sm group-hover:bg-primary group-hover:text-white transition-all">
+                                                                <ShoppingCart className="h-5 w-5" />
+                                                            </div>
+                                                            <div>
+                                                                <p className="font-extrabold text-gray-900 leading-tight">{o.customer}</p>
+                                                                <p className="text-[10px] text-gray-400 font-bold uppercase mt-1">Pharmacy Order</p>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-8 py-6">
+                                                        <span className="text-xs font-black text-primary bg-primary/5 px-2 py-1 rounded-lg border border-primary/10">{o.id}</span>
+                                                    </td>
+                                                    <td className="px-8 py-6">
+                                                        <div className="space-y-1">
+                                                            <span className={`px-2.5 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest border ${getStatusColor(o.status)}`}>{o.status}</span>
+                                                            <p className="text-sm font-black text-gray-900 tracking-tighter">₹{o.total}</p>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-8 py-6">
+                                                        <p className="text-xs font-bold text-gray-700">{o.date}</p>
+                                                        <p className="text-[9px] text-gray-400 font-black uppercase tracking-tighter mt-1">Recorded</p>
+                                                    </td>
+                                                    <td className="px-8 py-6 text-right pr-12">
+                                                        <button className="p-3 bg-gray-100 text-gray-400 rounded-2xl group-hover:bg-primary group-hover:text-white transition-all active:scale-95">
+                                                            <ChevronRight className="h-5 w-5" />
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                            {activeTab === "prescriptions" && prescriptions.filter(p => !searchQuery || p.patient.toLowerCase().includes(searchQuery.toLowerCase())).map(p => (
+                                                <tr key={p.id} className="hover:bg-gray-50/50 transition-all group cursor-pointer" onClick={() => setModal({ type: "prescription", data: p })}>
+                                                    <td className="px-8 py-6">
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center font-black shadow-sm group-hover:bg-emerald-600 group-hover:text-white transition-all">
+                                                                <FileText className="h-5 w-5" />
+                                                            </div>
+                                                            <div>
+                                                                <p className="font-extrabold text-gray-900 leading-tight">{p.patient}</p>
+                                                                <p className="text-[10px] text-gray-400 font-bold uppercase mt-1">Medical Record</p>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-8 py-6">
+                                                        <span className="text-xs font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-100">{p.id}</span>
+                                                    </td>
+                                                    <td className="px-8 py-6">
+                                                        <span className={`px-2.5 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest border ${getStatusColor(p.status)}`}>{p.status}</span>
+                                                    </td>
+                                                    <td className="px-8 py-6">
+                                                        <p className="text-xs font-bold text-gray-700">{p.time}</p>
+                                                        <p className="text-[9px] text-gray-400 font-black uppercase tracking-tighter mt-1">Uploaded</p>
+                                                    </td>
+                                                    <td className="px-8 py-6 text-right pr-12">
+                                                        <button className="p-3 bg-gray-100 text-gray-400 rounded-2xl group-hover:bg-emerald-600 group-hover:text-white transition-all active:scale-95">
+                                                            <Check className="h-5 w-5" />
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                            {activeTab === "inquiries" && inquiries.filter(i => !searchQuery || i.name.toLowerCase().includes(searchQuery.toLowerCase()) || i.subject.toLowerCase().includes(searchQuery.toLowerCase())).map(i => (
+                                                <tr key={i.id} className="hover:bg-gray-50/50 transition-all group cursor-pointer" onClick={() => setModal({ type: "inquiry", data: i })}>
+                                                    <td className="px-8 py-6">
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center font-black shadow-sm group-hover:bg-blue-600 group-hover:text-white transition-all">
+                                                                <Mail className="h-5 w-5" />
+                                                            </div>
+                                                            <div className="max-w-[200px] overflow-hidden">
+                                                                <p className="font-extrabold text-gray-900 leading-tight truncate">{i.subject}</p>
+                                                                <p className="text-[10px] text-gray-400 font-bold uppercase mt-1 italic">{i.name}</p>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-8 py-6">
+                                                        <span className="text-xs font-black text-blue-600 bg-blue-50 px-2 py-1 rounded-lg border border-blue-100">{i.id}</span>
+                                                    </td>
+                                                    <td className="px-8 py-6">
+                                                        <span className={`px-2.5 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest border ${getStatusColor(i.status)}`}>{i.status}</span>
+                                                    </td>
+                                                    <td className="px-8 py-6">
+                                                        <p className="text-xs font-bold text-gray-700">{i.date}</p>
+                                                        <p className="text-[9px] text-gray-400 font-black uppercase tracking-tighter mt-1">Sent</p>
+                                                    </td>
+                                                    <td className="px-8 py-6 text-right pr-12">
+                                                        <button className="p-3 bg-gray-100 text-gray-400 rounded-2xl group-hover:bg-blue-600 group-hover:text-white transition-all active:scale-95 shadow-sm">
+                                                            <MoreVertical className="h-5 w-5" />
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                            {activeTab === "users" && users.filter(u => !searchQuery || u.name.toLowerCase().includes(searchQuery.toLowerCase())).map(u => (
+                                                <tr key={u.id} className="hover:bg-gray-50/50 transition-all group cursor-pointer">
+                                                    <td className="px-8 py-6">
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center font-black shadow-sm group-hover:bg-purple-600 group-hover:text-white transition-all">
+                                                                {u.name[0]}
+                                                            </div>
+                                                            <div>
+                                                                <p className="font-extrabold text-gray-900 leading-tight">{u.name}</p>
+                                                                <p className="text-[10px] text-gray-400 font-bold uppercase mt-1 font-mono tracking-tighter">{u.email}</p>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-8 py-6">
+                                                        <span className="text-xs font-black text-purple-600 bg-purple-50 px-2 py-1 rounded-lg border border-purple-100">USR-{u.id}</span>
+                                                    </td>
+                                                    <td className="px-8 py-6">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
+                                                            <span className="text-[10px] font-black text-gray-900 uppercase">Active</span>
+                                                        </div>
+                                                        <p className="text-xs font-bold text-primary mt-1">{u.orders} Orders</p>
+                                                    </td>
+                                                    <td className="px-8 py-6">
+                                                        <p className="text-xs font-bold text-gray-700">{u.joined}</p>
+                                                        <p className="text-[9px] text-gray-400 font-black uppercase tracking-tighter mt-1">Enrollment</p>
+                                                    </td>
+                                                    <td className="px-8 py-6 text-right pr-12">
+                                                        <button className="p-3 bg-gray-100 text-gray-400 rounded-2xl group-hover:bg-purple-600 group-hover:text-white transition-all active:scale-95 shadow-sm">
+                                                            <Users className="h-5 w-5" />
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     )}
