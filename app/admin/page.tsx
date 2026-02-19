@@ -82,11 +82,17 @@ export default function AdminDashboard() {
         setTimeout(() => setToast(null), 3000)
     }
 
-    const refreshData = () => {
-        setOrders(store.getOrders())
-        setPrescriptions(store.getPrescriptions())
-        setInquiries(store.getInquiries())
-        setUsers(store.getUsers())
+    const refreshData = async () => {
+        const [ordersData, inquiriesData, prescriptionsData, usersData] = await Promise.all([
+            store.getOrders(),
+            store.getInquiries(),
+            store.getPrescriptions(),
+            store.getUsers()
+        ])
+        setOrders(ordersData)
+        setInquiries(inquiriesData)
+        setPrescriptions(prescriptionsData)
+        setUsers(usersData)
     }
 
     // Dashboard stats
@@ -155,30 +161,30 @@ export default function AdminDashboard() {
     }
 
     // Action Handlers
-    const handleApprovePrescription = (id: string) => {
-        store.updatePrescriptionStatus(id, "Approved")
-        refreshData()
+    const handleApprovePrescription = async (id: string) => {
+        await store.updatePrescriptionStatus(id, "Approved")
+        await refreshData()
         showToast(`Prescription ${id} approved`)
         setModal(null)
     }
 
-    const handleRejectPrescription = (id: string) => {
-        store.updatePrescriptionStatus(id, "Rejected")
-        refreshData()
+    const handleRejectPrescription = async (id: string) => {
+        await store.updatePrescriptionStatus(id, "Rejected")
+        await refreshData()
         showToast(`Prescription ${id} rejected`, "error")
         setModal(null)
     }
 
-    const handleUpdateOrderStatus = (id: string, status: Order["status"]) => {
-        store.updateOrderStatus(id, status)
-        refreshData()
+    const handleUpdateOrderStatus = async (id: string, status: Order["status"]) => {
+        await store.updateOrderStatus(id, status)
+        await refreshData()
         showToast(`Order ${id} status updated to ${status}`)
         setModal(null)
     }
 
-    const handleUpdateInquiryStatus = (id: string, status: Inquiry["status"]) => {
-        store.updateInquiryStatus(id, status)
-        refreshData()
+    const handleUpdateInquiryStatus = async (id: string, status: Inquiry["status"]) => {
+        await store.updateInquiryStatus(id, status)
+        await refreshData()
         showToast(`Inquiry status updated to ${status}`)
         setModal(null)
     }
@@ -189,10 +195,18 @@ export default function AdminDashboard() {
         showToast("Inquiry deleted", "info")
     }
 
-    const handleDeleteUser = (id: string) => {
-        store.deleteUser(id)
-        refreshData()
+    const handleDeleteUser = async (id: string) => {
+        await store.deleteUser(id)
+        await refreshData()
         showToast("User deleted", "info")
+        setModal(null)
+    }
+
+    const handleDeletePrescription = async (id: string) => {
+        await store.deletePrescription(id)
+        await refreshData()
+        showToast("Prescription deleted", "info")
+        setModal(null)
     }
 
     const handleSaveProduct = () => {
@@ -225,7 +239,7 @@ export default function AdminDashboard() {
         setProductForm({ id: "", name: "", category: "Wellness", price: "", image: "" })
     }
 
-    const handleDeleteProduct = (productId: string, productName: string) => {
+    const handleDeleteProduct = async (productId: string, productName: string) => {
         deleteProduct(productId)
         showToast(`Product "${productName}" deleted`, "info")
     }

@@ -3,6 +3,7 @@
 export type Order = {
     id: string
     customer: string
+    customerEmail: string
     items: any[]
     total: number
     status: "Processing" | "Shipped" | "Delivered" | "Cancelled"
@@ -41,106 +42,179 @@ export type User = {
     address?: string
 }
 
-const ORDERS_KEY = "vrindacare_orders"
-const PRESCRIPTIONS_KEY = "vrindacare_prescriptions"
-const INQUIRIES_KEY = "vrindacare_inquiries"
-const USERS_KEY = "vrindacare_users"
-
 export const store = {
-    getOrders: (): Order[] => {
-        if (typeof window === "undefined") return []
-        const saved = localStorage.getItem(ORDERS_KEY)
-        return saved ? JSON.parse(saved) : []
-    },
-    saveOrder: (order: Order) => {
-        const orders = store.getOrders()
-        localStorage.setItem(ORDERS_KEY, JSON.stringify([order, ...orders]))
-    },
-    updateOrderStatus: (id: string, status: Order["status"]) => {
-        const orders = store.getOrders()
-        const updated = orders.map(o => o.id === id ? { ...o, status } : o)
-        localStorage.setItem(ORDERS_KEY, JSON.stringify(updated))
-    },
-    getPrescriptions: (): Prescription[] => {
-        if (typeof window === "undefined") return []
-        const saved = localStorage.getItem(PRESCRIPTIONS_KEY)
-        return saved ? JSON.parse(saved) : []
-    },
-    savePrescription: (prescription: Prescription) => {
-        const prescriptions = store.getPrescriptions()
-        localStorage.setItem(PRESCRIPTIONS_KEY, JSON.stringify([prescription, ...prescriptions]))
-    },
-    updatePrescriptionStatus: (id: string, status: Prescription["status"]) => {
-        const prescriptions = store.getPrescriptions()
-        const updated = prescriptions.map(p => p.id === id ? { ...p, status } : p)
-        localStorage.setItem(PRESCRIPTIONS_KEY, JSON.stringify(updated))
-    },
-    getInquiries: (): Inquiry[] => {
-        if (typeof window === "undefined") return []
-        const saved = localStorage.getItem(INQUIRIES_KEY)
-        return saved ? JSON.parse(saved) : []
-    },
-    saveInquiry: (inquiry: Inquiry) => {
-        const inquiries = store.getInquiries()
-        localStorage.setItem(INQUIRIES_KEY, JSON.stringify([inquiry, ...inquiries]))
-    },
-    updateInquiryStatus: (id: string, status: Inquiry["status"]) => {
-        const inquiries = store.getInquiries()
-        const updated = inquiries.map(i => i.id === id ? { ...i, status } : i)
-        localStorage.setItem(INQUIRIES_KEY, JSON.stringify(updated))
-    },
-    deleteInquiry: (id: string) => {
-        const inquiries = store.getInquiries()
-        const updated = inquiries.filter(i => i.id !== id)
-        localStorage.setItem(INQUIRIES_KEY, JSON.stringify(updated))
-    },
-    getUsers: (): User[] => {
-        if (typeof window === "undefined") return []
-        const saved = localStorage.getItem(USERS_KEY)
-        if (!saved) {
-            const initialUsers: User[] = [
-                { id: "USR-001", name: "Rahul Verma", email: "rahul@example.com", orders: 12, joined: "Jan 2024" },
-                { id: "USR-002", name: "Anita Desai", email: "anita@example.com", orders: 8, joined: "Feb 2024" },
-                { id: "USR-003", name: "Karan Mehta", email: "karan@example.com", orders: 15, joined: "Dec 2023" },
-                { id: "USR-004", name: "Pooja Iyer", email: "pooja@example.com", orders: 5, joined: "Mar 2024" },
-            ]
-            localStorage.setItem(USERS_KEY, JSON.stringify(initialUsers))
-            return initialUsers
+    // ASYNC API METHODS
+
+    // ORDERS
+    getOrders: async (email?: string): Promise<Order[]> => {
+        try {
+            const url = email ? `/api/orders?email=${email}` : '/api/orders';
+            const res = await fetch(url);
+            if (!res.ok) return [];
+            return await res.json();
+        } catch (e) {
+            console.error(e);
+            return [];
         }
-        return JSON.parse(saved)
     },
-    saveUser: (user: User) => {
-        const users = store.getUsers()
-        localStorage.setItem(USERS_KEY, JSON.stringify([user, ...users]))
+    saveOrder: async (order: Order) => {
+        try {
+            await fetch('/api/orders', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(order)
+            });
+        } catch (e) {
+            console.error(e);
+        }
     },
-    deleteUser: (id: string) => {
-        const users = store.getUsers()
-        const updated = users.filter(u => u.id !== id)
-        localStorage.setItem(USERS_KEY, JSON.stringify(updated))
+    updateOrderStatus: async (id: string, status: Order["status"]) => {
+        try {
+            await fetch('/api/orders', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id, status })
+            });
+        } catch (e) {
+            console.error(e);
+        }
     },
+
+    // PRESCRIPTIONS
+    getPrescriptions: async (email?: string): Promise<Prescription[]> => {
+        try {
+            const url = email ? `/api/prescriptions?email=${email}` : '/api/prescriptions';
+            const res = await fetch(url);
+            if (!res.ok) return [];
+            return await res.json();
+        } catch (e) {
+            console.error(e);
+            return [];
+        }
+    },
+    savePrescription: async (prescription: Prescription) => {
+        try {
+            await fetch('/api/prescriptions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(prescription)
+            });
+        } catch (e) {
+            console.error(e);
+        }
+    },
+    updatePrescriptionStatus: async (id: string, status: Prescription["status"]) => {
+        try {
+            await fetch('/api/prescriptions', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id, status })
+            });
+        } catch (e) {
+            console.error(e);
+        }
+    },
+    deletePrescription: async (id: string) => {
+        try {
+            await fetch(`/api/prescriptions?id=${id}`, { method: 'DELETE' });
+        } catch (e) {
+            console.error(e);
+        }
+    },
+
+    // INQUIRIES
+    getInquiries: async (): Promise<Inquiry[]> => {
+        try {
+            const res = await fetch('/api/inquiries');
+            if (!res.ok) return [];
+            return await res.json();
+        } catch (e) {
+            console.error(e);
+            return [];
+        }
+    },
+    saveInquiry: async (inquiry: Inquiry) => {
+        try {
+            await fetch('/api/inquiries', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(inquiry)
+            });
+        } catch (e) {
+            console.error(e);
+        }
+    },
+    updateInquiryStatus: async (id: string, status: Inquiry["status"]) => {
+        try {
+            await fetch('/api/inquiries', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id, status })
+            });
+        } catch (e) {
+            console.error(e);
+        }
+    },
+    deleteInquiry: async (id: string) => {
+        try {
+            await fetch(`/api/inquiries?id=${id}`, { method: 'DELETE' });
+        } catch (e) {
+            console.error(e);
+        }
+    },
+
+    // USERS
+    getUsers: async (): Promise<User[]> => {
+        try {
+            const res = await fetch('/api/users');
+            if (!res.ok) return [];
+            return await res.json();
+        } catch (e) {
+            console.error(e);
+            return [];
+        }
+    },
+    saveUser: async (user: User) => {
+        // This is usually handled by auth/login, but for admin manual creation:
+        try {
+            await fetch('/api/users', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(user)
+            });
+        } catch (e) {
+            console.error(e);
+        }
+    },
+    deleteUser: async (id: string) => {
+        try {
+            await fetch(`/api/users?id=${id}`, { method: 'DELETE' });
+        } catch (e) {
+            console.error(e);
+        }
+    },
+
+    // AUTH (Using localStorage for session persistence)
     getCurrentUser: (): User | null => {
         if (typeof window === "undefined") return null
         const saved = localStorage.getItem("vrindacare_current_user")
         return saved ? JSON.parse(saved) : null
     },
-    login: (email: string, name: string) => {
-        const user: User = {
-            id: `USR-${Math.floor(Math.random() * 1000)}`,
-            email,
-            name,
-            orders: 0,
-            joined: new Date().toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }),
-            phone: "+91 98765 43210",
-            address: "123 Health Dr, Wellness City, India"
+    login: async (email: string, name: string) => {
+        try {
+            const res = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, name })
+            });
+            const user = await res.json();
+            localStorage.setItem("vrindacare_current_user", JSON.stringify(user))
+            window.dispatchEvent(new Event("auth-change"))
+            return user;
+        } catch (e) {
+            console.error(e);
+            return null;
         }
-        localStorage.setItem("vrindacare_current_user", JSON.stringify(user))
-        // Also save to users list if not exists
-        const users = store.getUsers()
-        if (!users.find(u => u.email === email)) {
-            store.saveUser(user)
-        }
-        window.dispatchEvent(new Event("auth-change"))
-        return user
     },
     logout: () => {
         localStorage.removeItem("vrindacare_current_user")

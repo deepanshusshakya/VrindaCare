@@ -10,15 +10,31 @@ import { store, type User as UserType } from "@/lib/store"
 
 export default function DashboardPage() {
     const [user, setUser] = useState<UserType | null>(null)
+    const [orderCount, setOrderCount] = useState(0)
+    const [prescriptionCount, setPrescriptionCount] = useState(0)
+    const [isLoading, setIsLoading] = useState(true)
     const router = useRouter()
 
     useEffect(() => {
         const currentUser = store.getCurrentUser()
         if (!currentUser) {
             router.push("/login")
-        } else {
-            setUser(currentUser)
+            return
         }
+
+        setUser(currentUser)
+
+        const fetchStats = async () => {
+            const [orders, prescriptions] = await Promise.all([
+                store.getOrders(currentUser.email),
+                store.getPrescriptions(currentUser.email)
+            ])
+            setOrderCount(orders.length)
+            setPrescriptionCount(prescriptions.length)
+            setIsLoading(false)
+        }
+
+        fetchStats()
     }, [router])
 
     if (!user) return null
@@ -37,7 +53,7 @@ export default function DashboardPage() {
                         <Package className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{user.orders}</div>
+                        <div className="text-2xl font-bold">{isLoading ? "..." : orderCount}</div>
                         <p className="text-xs text-muted-foreground">
                             Welcome back, {user.name}!
                         </p>
@@ -59,7 +75,7 @@ export default function DashboardPage() {
                         <FileText className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">0</div>
+                        <div className="text-2xl font-bold">{isLoading ? "..." : prescriptionCount}</div>
                         <p className="text-xs text-muted-foreground">
                             All active prescriptions
                         </p>

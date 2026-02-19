@@ -61,7 +61,7 @@ export function ContactForm() {
             email: formData.email,
             subject: formData.subject,
             message: formData.message,
-            date: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+            date: new Date().toISOString(),
             status: "New"
         })
 

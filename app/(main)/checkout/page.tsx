@@ -41,16 +41,19 @@ export default function CheckoutPage() {
         setOrderId(newId)
 
         // Save to store
-        store.saveOrder({
+        const orderData: any = {
             id: newId,
             customer: formData.name,
+            customerEmail: formData.email,
             items: items,
             total: total,
             status: "Processing",
-            date: "Just now",
+            date: new Date().toISOString(),
             paymentMethod: paymentMethod === "cod" ? "COD" : getSubMethodLabel(),
             shippingAddress: `${formData.address}, ${formData.city}`
-        })
+        }
+
+        store.saveOrder(orderData)
 
         // Simulate network delay/payment processing
         const processTime = paymentMethod === "online" ? 4000 : 1500;

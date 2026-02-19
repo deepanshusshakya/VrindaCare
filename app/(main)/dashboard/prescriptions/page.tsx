@@ -5,11 +5,24 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ArrowLeft, FileText, Upload } from "lucide-react"
 import Link from "next/link"
 
+import { useState, useEffect } from "react"
+import { store, type Prescription } from "@/lib/store"
+
 export default function PrescriptionsPage() {
-    const prescriptions = [
-        { id: "RX-9921", date: "Feb 05, 2026", doctor: "Dr. Smith", status: "Verified" },
-        { id: "RX-8842", date: "Feb 12, 2026", doctor: "Dr. Doe", status: "Pending Review" }
-    ]
+    const [prescriptions, setPrescriptions] = useState<Prescription[]>([])
+    const [isLoading, setIsLoading] = useState(true)
+
+    useEffect(() => {
+        const fetchPrescriptions = async () => {
+            const user = store.getCurrentUser()
+            if (user) {
+                const data = await store.getPrescriptions(user.email)
+                setPrescriptions(data)
+            }
+            setIsLoading(false)
+        }
+        fetchPrescriptions()
+    }, [])
 
     return (
         <div className="container px-4 py-8">
@@ -30,32 +43,42 @@ export default function PrescriptionsPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {prescriptions.map((rx) => (
-                    <Card key={rx.id}>
-                        <CardHeader className="flex flex-row items-center justify-between pb-2">
-                            <CardTitle className="text-lg font-semibold">{rx.id}</CardTitle>
-                            <FileText className="h-5 w-5 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="space-y-4">
-                                <div className="grid grid-cols-2 text-sm">
-                                    <span className="text-muted-foreground">Date:</span>
-                                    <span>{rx.date}</span>
-                                    <span className="text-muted-foreground">Doctor:</span>
-                                    <span>{rx.doctor}</span>
-                                    <span className="text-muted-foreground">Status:</span>
-                                    <span className={rx.status === "Verified" ? "text-green-600" : "text-yellow-600 font-medium"}>
-                                        {rx.status}
-                                    </span>
-                                </div>
-                                <div className="flex gap-2">
-                                    <Button variant="outline" className="flex-1" size="sm">View image</Button>
-                                    <Button variant="outline" className="flex-1" size="sm">Download</Button>
-                                </div>
-                            </div>
+                {isLoading ? (
+                    <div className="col-span-full text-center py-12">Loading your prescriptions...</div>
+                ) : prescriptions.length === 0 ? (
+                    <Card className="col-span-full">
+                        <CardContent className="py-12 text-center text-muted-foreground">
+                            No prescriptions uploaded yet.
                         </CardContent>
                     </Card>
-                ))}
+                ) : (
+                    prescriptions.map((rx) => (
+                        <Card key={rx.id}>
+                            <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                <CardTitle className="text-lg font-semibold">{rx.id}</CardTitle>
+                                <FileText className="h-5 w-5 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-4">
+                                    <div className="grid grid-cols-2 text-sm">
+                                        <span className="text-muted-foreground">Date:</span>
+                                        <span>{new Date(rx.time).toLocaleDateString()}</span>
+                                        <span className="text-muted-foreground">Patient:</span>
+                                        <span>{rx.patient}</span>
+                                        <span className="text-muted-foreground">Status:</span>
+                                        <span className={`font-medium ${rx.status === "Approved" ? "text-green-600" : rx.status === "Rejected" ? "text-rose-600" : "text-amber-600"}`}>
+                                            {rx.status}
+                                        </span>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <Button variant="outline" className="flex-1" size="sm" disabled={!rx.image}>View image</Button>
+                                        <Button variant="outline" className="flex-1" size="sm" disabled={!rx.image}>Download</Button>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    ))
+                )}
             </div>
         </div>
     )
