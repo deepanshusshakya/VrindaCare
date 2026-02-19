@@ -190,7 +190,7 @@ export function SiteHeader() {
                                 <Button variant="ghost" size="icon" asChild className="hidden md:flex">
                                     <Link href="/dashboard">
                                         <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold border border-emerald-200">
-                                            {user.name.charAt(0)}
+                                            {user.name?.[0] || user.email?.[0] || "U"}
                                         </div>
                                     </Link>
                                 </Button>
