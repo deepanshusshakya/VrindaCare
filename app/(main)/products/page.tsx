@@ -2,15 +2,18 @@
 
 import { useState, useMemo } from "react"
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { useProducts } from "@/components/providers/product-provider"
 import { useCart } from "@/components/providers/cart-provider"
-import { ShoppingCart, Check, Star, Filter, ArrowUpDown } from "lucide-react"
+import { ShoppingCart, Check, Star, Filter, Search } from "lucide-react"
 
 export default function ProductsPage() {
     const { products } = useProducts()
     const { addItem } = useCart()
+    const searchParams = useSearchParams()
+    const searchQuery = searchParams.get("search") || ""
     const [toast, setToast] = useState<string | null>(null)
     const [selectedCategories, setSelectedCategories] = useState<string[]>([])
     const [sortBy, setSortBy] = useState<string>("Featured")
@@ -41,6 +44,15 @@ export default function ProductsPage() {
     const filteredAndSortedProducts = useMemo(() => {
         let result = [...products]
 
+        // Filter by search query
+        if (searchQuery) {
+            const query = searchQuery.toLowerCase()
+            result = result.filter(p =>
+                p.name.toLowerCase().includes(query) ||
+                p.category.toLowerCase().includes(query)
+            )
+        }
+
         // Filter by categories
         if (selectedCategories.length > 0) {
             result = result.filter(p => selectedCategories.includes(p.category))
@@ -54,7 +66,7 @@ export default function ProductsPage() {
         }
 
         return result
-    }, [products, selectedCategories, sortBy])
+    }, [products, selectedCategories, sortBy, searchQuery])
 
     return (
         <div className="bg-gray-50/50 min-h-screen">
@@ -97,7 +109,16 @@ export default function ProductsPage() {
                     <div className="flex-1">
                         <div className="flex items-center justify-between mb-10">
                             <div>
-                                <h1 className="text-3xl font-black text-gray-900">All <span className="text-primary">Medicines</span></h1>
+                                {searchQuery ? (
+                                    <h1 className="text-3xl font-black text-gray-900 flex items-center gap-3">
+                                        <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
+                                            <Search className="h-6 w-6" />
+                                        </div>
+                                        Search <span className="text-primary italic">"{searchQuery}"</span>
+                                    </h1>
+                                ) : (
+                                    <h1 className="text-3xl font-black text-gray-900">All <span className="text-primary">Medicines</span></h1>
+                                )}
                                 <p className="text-sm font-bold text-gray-400 uppercase tracking-widest mt-1">Showing {filteredAndSortedProducts.length} Results</p>
                             </div>
                             <div className="hidden md:flex gap-2">
